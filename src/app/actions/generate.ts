@@ -30,12 +30,17 @@ export async function generateProfile(
     return { error: e.generic };
   }
 
+  // E-Mail ist OPTIONAL — der Drop-Flow ist eingabefrei. Nur validieren, wenn
+  // wirklich eine angegeben wurde (z.B. zukünftig für "Link per Mail").
   const emailRaw = formData.get("email");
-  const parsed = EmailSchema.safeParse(emailRaw);
-  if (!parsed.success) {
-    return { error: e.invalidEmail };
+  let email: string | null = null;
+  if (typeof emailRaw === "string" && emailRaw.trim().length > 0) {
+    const parsed = EmailSchema.safeParse(emailRaw.trim());
+    if (!parsed.success) {
+      return { error: e.invalidEmail };
+    }
+    email = parsed.data.toLowerCase();
   }
-  const email = parsed.data.toLowerCase().trim();
 
   const files = formData.getAll("files").filter((f): f is File => f instanceof File);
   if (files.length === 0) {
@@ -44,7 +49,7 @@ export async function generateProfile(
 
   const limit = await checkLimit(email);
   if (!limit.allowed) {
-    return { error: limit.message ?? e.limitFallback };
+    return { error: e.limitFallback };
   }
 
   // Reserve the slot before the expensive Anthropic call so parallel
@@ -79,11 +84,14 @@ export async function generateProfile(
 
     await attachProfileToRun(runId, id);
 
-    const baseUrl = process.env.PUBLIC_BASE_URL ?? "http://localhost:3000";
-    await sendProfileReady({
-      email,
-      permalink: `${baseUrl}/voice/${slug}`,
-    });
+    // Mail nur, wenn der Nutzer freiwillig eine E-Mail angegeben hat.
+    if (email) {
+      const baseUrl = process.env.PUBLIC_BASE_URL ?? "http://localhost:3000";
+      await sendProfileReady({
+        email,
+        permalink: `${baseUrl}/voice/${slug}`,
+      });
+    }
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     return { error: msg };

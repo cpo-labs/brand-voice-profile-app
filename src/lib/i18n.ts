@@ -22,7 +22,6 @@ type Dict = {
     drop: {
       num: string; title: string; sub: string;
       zoneLead: string; zoneTitle: string; zoneHint: string;
-      emailLabel: string; emailHint: string; emailPlaceholder: string;
       cta: string; ctaPending: string; note: string;
     };
     forward: {
@@ -78,9 +77,6 @@ const de: Dict = {
       zoneLead: "Deine Texte",
       zoneTitle: "Drop · Klick · Auswählen",
       zoneHint: "TXT · MD · PDF · DOCX",
-      emailLabel: "E-Mail (für deinen Link)",
-      emailHint: "Wir schicken dir den Permalink — und melden uns nur, wenn du mehr willst.",
-      emailPlaceholder: "du@beispiel.de",
       cta: "VOICE.md generieren",
       ctaPending: "Generiere…",
       note: "Max 20 Dateien · 5 MB pro Datei. Wir speichern nur das Profil, nicht die Quelltexte.",
@@ -188,9 +184,6 @@ const en: Dict = {
       zoneLead: "Your texts",
       zoneTitle: "Drop · Click · Pick",
       zoneHint: "TXT · MD · PDF · DOCX",
-      emailLabel: "Email (for your link)",
-      emailHint: "We'll send you the permalink — and only reach out if you want more.",
-      emailPlaceholder: "you@example.com",
       cta: "Generate VOICE.md",
       ctaPending: "Generating…",
       note: "Max 20 files · 5 MB each. We only store the profile, never your source texts.",

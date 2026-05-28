@@ -1,4 +1,4 @@
-import { anthropic, VOICE_MODEL } from "./anthropic";
+import { getAnthropic, VOICE_MODEL } from "./anthropic";
 
 export interface VoiceExtractionResult {
   voiceMd: string;
@@ -82,18 +82,20 @@ export async function extractVoice({
     );
   }
 
-  // Anthropic kann bei 200k-char inputs lange brauchen. 120s ist großzügig,
-  // aber endlich — ohne dieses Limit hängt die Server Action bis der Host killt.
+  // Vercel killt die Funktion bei maxDuration (60s). Wir brechen bei 55s
+  // selbst ab, damit der Nutzer eine saubere Fehlermeldung bekommt statt eines
+  // opaken Function-Timeouts.
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 120_000);
+  const timeout = setTimeout(() => controller.abort(), 55_000);
 
   let response;
   try {
-    response = await anthropic.messages.create(
+    response = await getAnthropic().messages.create(
       {
         model: VOICE_MODEL,
         max_tokens: 8000,
-        system: SYSTEM_PROMPT,
+        // System-Prompt cachen (statisch) — spart Kosten bei wiederholten Läufen.
+        system: [{ type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }],
         messages: [
           {
             role: "user",

@@ -7,7 +7,9 @@ import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
 export const profile = sqliteTable("profile", {
   id: text("id").primaryKey(),
   slug: text("slug").notNull().unique(),
-  email: text("email").notNull(),
+  // Optional: der Drop-Flow ist eingabefrei. E-Mail wird nur beim Forward-/
+  // Gmail-Pfad erfasst.
+  email: text("email"),
   // The generated artefacts
   voiceMd: text("voice_md").notNull(),
   dropInChatgpt: text("drop_in_chatgpt").notNull(),
@@ -28,7 +30,7 @@ export const profile = sqliteTable("profile", {
 // Rate-limit log — one row per generation attempt
 export const profileRun = sqliteTable("profile_run", {
   id: text("id").primaryKey(),
-  email: text("email").notNull(),
+  email: text("email"),
   profileId: text("profile_id").references(() => profile.id, {
     onDelete: "set null",
   }),

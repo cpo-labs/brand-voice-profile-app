@@ -19,58 +19,46 @@ function currentMonthKey(): string {
   return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
 }
 
-export async function checkLimit(email: string): Promise<LimitCheck> {
+export async function checkLimit(email?: string | null): Promise<LimitCheck> {
   const monthKey = currentMonthKey();
 
-  const [byEmail, globalCount] = await Promise.all([
-    db
-      .select({ count: sql<number>`count(*)` })
-      .from(profileRun)
-      .where(eq(profileRun.email, email.toLowerCase())),
-    db
-      .select({ count: sql<number>`count(*)` })
-      .from(profileRun)
-      .where(eq(profileRun.monthKey, monthKey)),
-  ]);
-
-  const emailCount = byEmail[0]?.count ?? 0;
+  // Global-Cap gilt immer (Kostenschutz). Per-E-Mail-Limit nur, wenn eine
+  // E-Mail vorliegt — der eingabefreie Drop-Flow hat keine.
+  const globalCount = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(profileRun)
+    .where(eq(profileRun.monthKey, monthKey));
   const totalThisMonth = globalCount[0]?.count ?? 0;
 
-  if (emailCount >= PER_EMAIL) {
-    return {
-      allowed: false,
-      reason: "per-email",
-      remaining: 0,
-      message: `Du hast bereits ${emailCount} Profil(e) generiert. Für ein weiteres Profil schreib uns kurz — Kontakt unten auf der Seite.`,
-    };
+  if (email) {
+    const byEmail = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(profileRun)
+      .where(eq(profileRun.email, email.toLowerCase()));
+    const emailCount = byEmail[0]?.count ?? 0;
+    if (emailCount >= PER_EMAIL) {
+      return { allowed: false, reason: "per-email", remaining: 0 };
+    }
   }
 
   if (totalThisMonth >= GLOBAL_MONTHLY) {
-    return {
-      allowed: false,
-      reason: "global",
-      remaining: 0,
-      message: `Diesen Monat sind die Free-Plätze ausgeschöpft (${GLOBAL_MONTHLY}/${GLOBAL_MONTHLY}). Schreib uns, wenn du nicht warten willst.`,
-    };
+    return { allowed: false, reason: "global", remaining: 0 };
   }
 
-  return {
-    allowed: true,
-    remaining: Math.max(0, PER_EMAIL - emailCount),
-  };
+  return { allowed: true, remaining: 1 };
 }
 
 export async function recordRun({
-  email,
+  email = null,
   profileId = null,
 }: {
-  email: string;
+  email?: string | null;
   profileId?: string | null;
 }): Promise<string> {
   const id = crypto.randomUUID();
   await db.insert(profileRun).values({
     id,
-    email: email.toLowerCase(),
+    email: email ? email.toLowerCase() : null,
     profileId,
     monthKey: currentMonthKey(),
   });

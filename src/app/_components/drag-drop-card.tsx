@@ -111,20 +111,6 @@ export function DropCard({ locale }: { locale: Locale }) {
           </ul>
         )}
 
-        <div>
-          <label htmlFor="bvp-email" className="field__label">{d.emailLabel}</label>
-          <input
-            id="bvp-email"
-            name="email"
-            type="email"
-            required
-            autoComplete="email"
-            placeholder={d.emailPlaceholder}
-            className="field"
-          />
-          <p className="text-xs mt-1.5" style={{ color: "var(--soft)" }}>{d.emailHint}</p>
-        </div>
-
         {state?.error && (
           <p
             className="text-sm rounded-xl px-3 py-2"
