@@ -7,6 +7,9 @@ import { SiteFooter } from "@/app/_components/site-footer";
 import { CopyBlock } from "@/app/_components/copy-block";
 import { DownloadVoiceButton } from "@/app/_components/download-voice-button";
 
+const CONTACT_EMAIL =
+  process.env.CONTACT_EMAIL ?? "hello@appsales-consulting.de";
+
 interface Props {
   params: Promise<{ slug: string }>;
 }
@@ -174,7 +177,7 @@ export default async function VoiceProfilePage({ params }: Props) {
               schreib mir kurz.
             </p>
             <a
-              href="mailto:c.poral@elunic.com?subject=Brand%20Voice%20Profile%20-%20Anfrage"
+              href={`mailto:${CONTACT_EMAIL}?subject=Brand%20Voice%20Profile%20-%20Anfrage`}
               className="pill pill--light pill--arrow"
             >
               Schreib mir

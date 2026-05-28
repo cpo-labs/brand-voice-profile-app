@@ -35,19 +35,14 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.100.0",
-    "@base-ui/react": "^1.4.1",
     "@libsql/client": "^0.17.3",
-    "better-auth": "^1.6.11",
-    "clsx": "^2.1.1",
     "drizzle-orm": "^0.45.2",
-    "lucide-react": "^0.479.0",
     "mammoth": "^1.10.0",
     "next": "^16.0.0",
     "pdf-parse": "^1.1.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "resend": "^4.5.0",
-    "tailwind-merge": "^3.6.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {

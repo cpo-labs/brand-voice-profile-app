@@ -1,4 +1,4 @@
-import { and, eq, gte, sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { db } from "./db";
 import { profileRun } from "./db/schema";
 
@@ -62,17 +62,29 @@ export async function checkLimit(email: string): Promise<LimitCheck> {
 
 export async function recordRun({
   email,
-  profileId,
+  profileId = null,
 }: {
   email: string;
-  profileId: string;
-}) {
+  profileId?: string | null;
+}): Promise<string> {
+  const id = crypto.randomUUID();
   await db.insert(profileRun).values({
-    id: crypto.randomUUID(),
+    id,
     email: email.toLowerCase(),
     profileId,
     monthKey: currentMonthKey(),
   });
+  return id;
+}
+
+export async function attachProfileToRun(
+  runId: string,
+  profileId: string
+): Promise<void> {
+  await db
+    .update(profileRun)
+    .set({ profileId })
+    .where(eq(profileRun.id, runId));
 }
 
 export const LIMITS = {

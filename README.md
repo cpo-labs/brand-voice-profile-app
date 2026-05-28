@@ -24,10 +24,30 @@ Kontakt-CTA — das ist die Lead-Mechanik.
 - **Next.js 16** (App Router, Server Actions, Turbopack)
 - **TypeScript 5**, **React 19**, **Tailwind 4**
 - **Drizzle ORM** + **Turso (libsql)** für Persistenz
-- **Anthropic Claude Sonnet 4.5** für Voice-Extraction
+- **Anthropic Claude Sonnet 4.5** für Voice-Extraction (90 s Server-Timeout)
 - **Resend** für Permalink-Versand (optional in dev)
 - **mammoth** + **pdf-parse** für File-Extraction
 - **zod** für Validation
+
+## Datenschutz
+
+E-Mails werden **ungehasht** in der DB gespeichert und ausschließlich für den
+Permalink-Versand verwendet. Keine Weitergabe, kein Newsletter. Auf Anfrage
+löschen wir Profil + Run-Eintrag. Die hochgeladenen Texte selbst werden nicht
+persistiert — nur das daraus generierte Voice-Profil.
+
+## Bekannte Limits
+
+- **Keine Test-Suite** im MVP. Kritische Pfade (`rate-limit`, `text-extraction`,
+  `voice-extraction`) sind erste Test-Kandidaten.
+- **Rate-Limit-Race:** zwischen `checkLimit` und `recordRun` liegt ein
+  Single-Roundtrip-Window. Bei strikt parallelen Requests mit gleicher E-Mail
+  können beide den Limit-Check passieren. Für Lead-Magnet-Volumen unkritisch.
+- **File-Validation per Extension** (kein MIME-Check, kein ZIP-Bomb-Schutz).
+  Akzeptabel für vertrauensbasierten Lead-Magnet-Flow, nicht für Public-Open-Upload.
+- **bodySizeLimit** der Server Action steht auf 10 MB (siehe `next.config.ts`).
+  Bei Überschreitung sieht der User einen unstrukturierten 413-Fehler, kein
+  deutsches Feedback.
 
 ## Local Setup
 

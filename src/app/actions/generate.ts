@@ -6,7 +6,7 @@ import { db } from "@/lib/db";
 import { profile } from "@/lib/db/schema";
 import { extractTextFromFiles, countWords } from "@/lib/text-extraction";
 import { extractVoice } from "@/lib/voice-extraction";
-import { checkLimit, recordRun } from "@/lib/rate-limit";
+import { attachProfileToRun, checkLimit, recordRun } from "@/lib/rate-limit";
 import { generateSlug } from "@/lib/slug";
 import { sendProfileReady } from "@/lib/email";
 
@@ -46,6 +46,11 @@ export async function generateProfile(
     };
   }
 
+  // Reserve the slot before the expensive Anthropic call so parallel
+  // requests with the same email see the run during their own checkLimit.
+  // Window from ~30s (LLM) down to a single DB round-trip.
+  const runId = await recordRun({ email });
+
   let slug: string;
   try {
     const texts = await extractTextFromFiles(files);
@@ -71,12 +76,9 @@ export async function generateProfile(
       sourceWordCount: wordCount,
     });
 
-    await recordRun({ email, profileId: id });
+    await attachProfileToRun(runId, id);
 
-    const baseUrl =
-      process.env.PUBLIC_BASE_URL ||
-      process.env.BETTER_AUTH_URL ||
-      "http://localhost:3000";
+    const baseUrl = process.env.PUBLIC_BASE_URL ?? "http://localhost:3000";
     await sendProfileReady({
       email,
       permalink: `${baseUrl}/voice/${slug}`,

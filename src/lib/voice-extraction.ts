@@ -82,17 +82,37 @@ export async function extractVoice({
     );
   }
 
-  const response = await anthropic.messages.create({
-    model: VOICE_MODEL,
-    max_tokens: 8000,
-    system: SYSTEM_PROMPT,
-    messages: [
+  // Anthropic kann bei 200k-char inputs lange brauchen. 120s ist großzügig,
+  // aber endlich — ohne dieses Limit hängt die Server Action bis der Host killt.
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 120_000);
+
+  let response;
+  try {
+    response = await anthropic.messages.create(
       {
-        role: "user",
-        content: USER_PROMPT(texts),
+        model: VOICE_MODEL,
+        max_tokens: 8000,
+        system: SYSTEM_PROMPT,
+        messages: [
+          {
+            role: "user",
+            content: USER_PROMPT(texts),
+          },
+        ],
       },
-    ],
-  });
+      { signal: controller.signal }
+    );
+  } catch (err) {
+    if (controller.signal.aborted) {
+      throw new Error(
+        "Die Generierung hat zu lange gedauert. Versuch es nochmal mit weniger oder kürzeren Texten."
+      );
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeout);
+  }
 
   const textBlock = response.content.find((b) => b.type === "text");
   if (!textBlock || textBlock.type !== "text") {
@@ -128,7 +148,8 @@ export async function extractVoice({
     "proofAfter",
   ];
   for (const key of required) {
-    if (typeof parsed[key] !== "string" || parsed[key].length === 0) {
+    const value = parsed[key];
+    if (typeof value !== "string" || value.trim().length === 0) {
       throw new Error(`Modell-Antwort fehlt das Feld "${key}".`);
     }
   }

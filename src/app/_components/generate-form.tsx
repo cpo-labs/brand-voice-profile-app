@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { generateProfile, type GenerateState } from "@/app/actions/generate";
 
@@ -155,30 +155,17 @@ function ControlledFileList({
   files: File[];
   onRemove: (i: number) => void;
 }) {
-  // Hidden DataTransfer-backed input that holds the actual File objects
-  // so Server Action receives them via formData.getAll("files").
+  // Hidden file input mirrors the state so the Server Action receives the
+  // selected files via formData.getAll("files"). DataTransfer is the only
+  // way to programmatically populate <input type=file>.
   const ref = useRef<HTMLInputElement>(null);
 
-  // Sync files into the hidden input each render
-  if (typeof window !== "undefined" && ref.current) {
+  useEffect(() => {
+    if (!ref.current) return;
     const dt = new DataTransfer();
-    files.forEach((f) => dt.items.add(f));
+    for (const f of files) dt.items.add(f);
     ref.current.files = dt.files;
-  }
-
-  if (files.length === 0) {
-    return (
-      <input
-        ref={ref}
-        type="file"
-        name="files"
-        multiple
-        className="hidden"
-        tabIndex={-1}
-        aria-hidden
-      />
-    );
-  }
+  }, [files]);
 
   return (
     <>
@@ -191,33 +178,35 @@ function ControlledFileList({
         tabIndex={-1}
         aria-hidden
       />
-      <ul className="flex flex-col gap-2">
-        {files.map((f, i) => (
-          <li
-            key={`${f.name}-${i}`}
-            className="flex items-center justify-between rounded-xl px-4 py-3"
-            style={{ background: "rgba(24,20,16,0.06)" }}
-          >
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium truncate">{f.name}</p>
-              <p
-                className="text-xs"
-                style={{ color: "var(--color-soft)" }}
-              >
-                {formatBytes(f.size)}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => onRemove(i)}
-              className="text-xs ml-3 underline decoration-[var(--color-coral)] underline-offset-4"
-              style={{ color: "var(--color-coral)" }}
+      {files.length > 0 && (
+        <ul className="flex flex-col gap-2">
+          {files.map((f, i) => (
+            <li
+              key={`${f.name}-${i}`}
+              className="flex items-center justify-between rounded-xl px-4 py-3"
+              style={{ background: "rgba(24,20,16,0.06)" }}
             >
-              Entfernen
-            </button>
-          </li>
-        ))}
-      </ul>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium truncate">{f.name}</p>
+                <p
+                  className="text-xs"
+                  style={{ color: "var(--color-soft)" }}
+                >
+                  {formatBytes(f.size)}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => onRemove(i)}
+                className="text-xs ml-3 underline decoration-[var(--color-coral)] underline-offset-4"
+                style={{ color: "var(--color-coral)" }}
+              >
+                Entfernen
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
     </>
   );
 }
