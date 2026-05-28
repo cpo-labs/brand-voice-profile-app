@@ -1,0 +1,46 @@
+# Environment — NIEMALS committen
+.env
+.env.local
+.env*.local
+.env.development
+.env.production
+
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Next.js
+.next/
+out/
+build/
+dist/
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.idea/
+.vscode/
+*.swp
+
+# Local DB
+/data/
+*.db
+*.db-journal
+
+# Drizzle
+drizzle/
+!drizzle.config.ts
+
+# Vercel
+.vercel
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts

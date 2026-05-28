@@ -1,0 +1,66 @@
+{
+  "name": "brand-voice-profile",
+  "version": "0.1.0",
+  "description": "Generate a personal VOICE.md from your own texts. Drop-in style profile for any LLM. Lead-magnet tool by AppSales Labs.",
+  "license": "MIT",
+  "author": "Christian Poral",
+  "homepage": "https://github.com/cpo-labs/brand-voice-profile-app#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cpo-labs/brand-voice-profile-app.git"
+  },
+  "bugs": {
+    "url": "https://github.com/cpo-labs/brand-voice-profile-app/issues"
+  },
+  "keywords": [
+    "brand-voice",
+    "tone-of-voice",
+    "writing-style",
+    "llm",
+    "nextjs",
+    "anthropic",
+    "appsales-labs"
+  ],
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "db:push": "drizzle-kit push --config=src/lib/db/drizzle.config.ts",
+    "db:generate": "drizzle-kit generate --config=src/lib/db/drizzle.config.ts",
+    "db:studio": "drizzle-kit studio --config=src/lib/db/drizzle.config.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.100.0",
+    "@base-ui/react": "^1.4.1",
+    "@libsql/client": "^0.17.3",
+    "better-auth": "^1.6.11",
+    "clsx": "^2.1.1",
+    "drizzle-orm": "^0.45.2",
+    "lucide-react": "^0.479.0",
+    "mammoth": "^1.10.0",
+    "next": "^16.0.0",
+    "pdf-parse": "^1.1.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "resend": "^4.5.0",
+    "tailwind-merge": "^3.6.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/pdf-parse": "^1.1.5",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "dotenv": "^17.4.2",
+    "drizzle-kit": "^0.31.10",
+    "eslint": "^9",
+    "eslint-config-next": "^16.0.0",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}
