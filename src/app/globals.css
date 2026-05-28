@@ -72,3 +72,7 @@
 .icard__sub { font-size: .94rem; color: var(--soft); margin-bottom: 1.4rem; flex: 1; line-height: 1.55; }
 .icard__body { margin-top: .4rem; }
 .icard__soon { position: absolute; top: 1.2rem; right: 1.2rem; font-family: var(--mono); font-size: .58rem; letter-spacing: .08em; text-transform: uppercase; color: var(--soft); border: 1.3px solid rgba(24, 20, 16, .18); border-radius: 100px; padding: .26rem .56rem; }
+.icard__badge { position: absolute; top: 1.2rem; right: 1.2rem; font-family: var(--mono); font-size: .58rem; letter-spacing: .08em; text-transform: uppercase; color: var(--ink); background: var(--accent); border-radius: 100px; padding: .28rem .62rem; font-weight: 700; }
+/* die empfohlene Karte hebt sich ab */
+.icard--primary { border-color: var(--accent); box-shadow: 0 22px 48px -30px color-mix(in oklab, var(--accent) 60%, rgba(24,20,16,.5)); }
+.icard--primary:hover { box-shadow: 0 30px 60px -30px color-mix(in oklab, var(--accent) 55%, rgba(24,20,16,.5)); }

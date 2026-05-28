@@ -40,7 +40,8 @@ export function DropCard({ locale }: { locale: Locale }) {
   }
 
   return (
-    <article className="icard">
+    <article className="icard icard--primary">
+      <span className="icard__badge">{t(locale).sources.recommended}</span>
       <p className="icard__num">{d.num}</p>
       <h3 className="icard__title">{d.title}</h3>
       <p className="icard__sub">{d.sub}</p>

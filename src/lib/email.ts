@@ -6,6 +6,49 @@ const fromAddress =
   "Brand Voice Profile <hello@labs.appsales-consulting.de>";
 
 const resend = apiKey ? new Resend(apiKey) : null;
+const contactAddress = process.env.CONTACT_EMAIL || "hello@appsales-consulting.de";
+
+/**
+ * Benachrichtigt das Lab-Team über eine neue Gmail-Connect-Zugangsanfrage.
+ * Google bietet keine API zum Hinzufügen von OAuth-Test-Usern — daher wird
+ * die Adresse erfasst und Christian trägt sie manuell in die Test-User-Liste
+ * ein, dann geht der Link raus.
+ */
+export async function sendGmailAccessRequest({
+  gmail,
+  locale,
+}: {
+  gmail: string;
+  locale: string;
+}): Promise<{ ok: boolean }> {
+  if (!resend) {
+    // Dev-only Fallback; gmail ist user-PII und gehört nicht in Prod-Logs.
+    if (process.env.NODE_ENV === "development") {
+      console.log(`\n[Brand Voice Profile] Gmail-Access-Request (RESEND not set): ${gmail} (${locale})\n`);
+    }
+    return { ok: true };
+  }
+  try {
+    await resend.emails.send({
+      from: fromAddress,
+      to: contactAddress,
+      subject: `Gmail-Connect Zugang angefragt: ${gmail}`,
+      text: [
+        "Neue Gmail-Connect-Anfrage (Brand Voice Profile).",
+        "",
+        `Gmail:    ${gmail}`,
+        `Sprache:  ${locale}`,
+        "",
+        "Aktion: Adresse in Google Cloud Console → OAuth Consent Screen → Test users",
+        "hinzufügen, dann den OAuth-Link an diese Adresse schicken.",
+      ].join("\n"),
+    });
+    return { ok: true };
+  } catch (err) {
+    console.error("[Brand Voice Profile] Gmail-access notify failed:", err);
+    return { ok: false };
+  }
+}
 
 export interface PermalinkArgs {
   email: string;

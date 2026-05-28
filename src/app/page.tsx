@@ -40,15 +40,15 @@ export default async function HomePage() {
                 <div className="nvcap">Voice Profile</div>
                 <div className="nvrow nvrow--first">
                   <span className="nvlabel nvlabel--on">{locale === "de" ? "Ton" : "Tone"}</span>
-                  <span className="nvtxt">{locale === "de" ? "direkt, ohne Marketing-Sprech" : "direct, no marketing-speak"}</span>
+                  <span className="nvtxt">{locale === "de" ? "direkt, ohne Floskeln" : "direct, no fluff"}</span>
                 </div>
                 <div className="nvrow">
                   <span className="nvlabel">{locale === "de" ? "Satzbau" : "Syntax"}</span>
-                  <span className="nvtxt nvmute">{locale === "de" ? "kurz, aktiv, konkret" : "short, active, concrete"}</span>
+                  <span className="nvtxt nvmute">{locale === "de" ? "kurz & aktiv" : "short & active"}</span>
                 </div>
                 <div className="nvrow">
                   <span className="nvlabel">{locale === "de" ? "meidet" : "avoids"}</span>
-                  <span className="nvtxt nvmute">&bdquo;Let&apos;s dive in&ldquo;, {locale === "de" ? "Floskeln" : "filler"}</span>
+                  <span className="nvtxt nvmute">&bdquo;Let&apos;s dive in&ldquo; &amp; Co.</span>
                 </div>
                 <div className="hba" style={{ marginTop: "1rem" }}>
                   <div className="hba__row">

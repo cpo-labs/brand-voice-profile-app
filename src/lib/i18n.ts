@@ -18,6 +18,7 @@ type Dict = {
     title: string;
     titleEm: string;
     intro: string;
+    recommended: string;
     drop: {
       num: string; title: string; sub: string;
       zoneLead: string; zoneTitle: string; zoneHint: string;
@@ -27,11 +28,14 @@ type Dict = {
     forward: {
       num: string; title: string; sub: string;
       addrLabel: string; subjLabel: string; copy: string; copied: string; copyFail: string;
+      emailToken: string; subjectMaterial: string; subjectHint: string;
       steps: string[]; note: string;
     };
     google: {
       num: string; title: string; sub: string; soon: string;
       bullets: string[]; note: string;
+      emailLabel: string; emailPlaceholder: string; cta: string; ctaPending: string;
+      requested: string; errEmail: string;
     };
   };
   why: {
@@ -63,9 +67,10 @@ const de: Dict = {
   },
   sources: {
     eyebrow: "Drei Wege rein",
-    title: "Wähl deine ",
-    titleEm: "Quelle",
-    intro: "Gleiches Ziel, ein VOICE.md, das überall funktioniert. Nimm den Weg mit dem wenigsten Aufwand für dich.",
+    title: "Such dir deinen ",
+    titleEm: "Weg",
+    intro: "Drei Eingänge, ein Ergebnis. Klick dich in eine Karte — der erste funktioniert sofort, ganz ohne Verbindung.",
+    recommended: "Empfohlen",
     drop: {
       num: "01 · Dateien",
       title: "Texte direkt droppen",
@@ -85,10 +90,13 @@ const de: Dict = {
       title: "Mails weiterleiten",
       sub: "Du hast einen Stapel Mails, die nach dir klingen? Leite sie an unsere Sammeladresse weiter — wir extrahieren den Text. Kein Account, keine Verbindung.",
       addrLabel: "Weiterleiten an",
-      subjLabel: "Betreff (deine E-Mail in Klammern)",
+      subjLabel: "Betreff",
       copy: "Kopieren",
       copied: "Kopiert!",
       copyFail: "Manuell markieren",
+      emailToken: "deine@email.de",
+      subjectMaterial: "Mein Voice-Material",
+      subjectHint: "Setz deine eigene E-Mail in die eckigen Klammern — daran erkennen wir dich.",
       steps: [
         "Mails weiterleiten (oder als Anhang) an die Adresse oben",
         "Deine E-Mail im Betreff in eckigen Klammern",
@@ -104,9 +112,15 @@ const de: Dict = {
       bullets: [
         "Nur Sent-Folder — keine eingehenden Mails",
         "Token wird nach der Generierung gelöscht",
-        "Aktuell für Demos & bekannte Prospects",
+        "Read-only, kein Posting in deinem Namen",
       ],
-      note: "Gmail-Lesezugriff braucht eine Google-Verifizierung, die wir gezielt freischalten. Schreib uns, wenn du diesen Weg willst — Datei-Drop und Weiterleitung laufen sofort.",
+      note: "Gmail-Lesezugriff läuft in einer geschlossenen Test-Phase. Trag deine Gmail-Adresse ein — wir schalten dich frei und schicken dir den Link.",
+      emailLabel: "Deine Gmail-Adresse",
+      emailPlaceholder: "du@gmail.com",
+      cta: "Zugang anfragen",
+      ctaPending: "Sende…",
+      requested: "Eingetragen. Wir schalten dich frei und schicken dir den Link per Mail.",
+      errEmail: "Bitte gib eine gültige Gmail-Adresse ein.",
     },
   },
   why: {
@@ -163,9 +177,10 @@ const en: Dict = {
   },
   sources: {
     eyebrow: "Three ways in",
-    title: "Choose your ",
-    titleEm: "source",
-    intro: "Same goal: one VOICE.md that works everywhere. Take the path with the least effort for you.",
+    title: "Pick your ",
+    titleEm: "way in",
+    intro: "Three entry points, one result. Click into a card — the first works right away, no connection needed.",
+    recommended: "Recommended",
     drop: {
       num: "01 · Files",
       title: "Drop texts directly",
@@ -185,10 +200,13 @@ const en: Dict = {
       title: "Forward emails",
       sub: "Got a pile of emails that sound like you? Forward them to our collection address — we extract the text. No account, no connection.",
       addrLabel: "Forward to",
-      subjLabel: "Subject (your email in brackets)",
+      subjLabel: "Subject",
       copy: "Copy",
       copied: "Copied!",
       copyFail: "Select manually",
+      emailToken: "you@example.com",
+      subjectMaterial: "My voice material",
+      subjectHint: "Put your own email in the square brackets — that's how we recognize you.",
       steps: [
         "Forward emails (or as attachments) to the address above",
         "Put your email in square brackets in the subject",
@@ -204,9 +222,15 @@ const en: Dict = {
       bullets: [
         "Sent folder only — no incoming mail",
         "Token deleted after generation",
-        "Currently for demos & known prospects",
+        "Read-only, no posting on your behalf",
       ],
-      note: "Gmail read access needs a Google verification we enable deliberately. Tell us if you want this path — file drop and forwarding work right away.",
+      note: "Gmail read access runs in a closed test phase. Enter your Gmail address — we'll grant access and send you the link.",
+      emailLabel: "Your Gmail address",
+      emailPlaceholder: "you@gmail.com",
+      cta: "Request access",
+      ctaPending: "Sending…",
+      requested: "You're on the list. We'll grant access and email you the link.",
+      errEmail: "Please enter a valid Gmail address.",
     },
   },
   why: {

@@ -15,16 +15,12 @@ export function ForwardCard({ locale }: { locale: Locale }) {
       setCopyState("ok");
       setTimeout(() => setCopyState("idle"), 1500);
     } catch {
-      // Clipboard kann blockiert sein (kein User-Gesture, HTTP-Origin, Firefox)
       setCopyState("fail");
       setTimeout(() => setCopyState("idle"), 2500);
     }
   }
 
   const copyLabel = copyState === "ok" ? d.copied : copyState === "fail" ? d.copyFail : d.copy;
-
-  const subjectTemplate =
-    locale === "de" ? "[deine@email.de] Mein Voice-Material" : "[you@example.com] My voice material";
 
   return (
     <article className="icard">
@@ -33,13 +29,16 @@ export function ForwardCard({ locale }: { locale: Locale }) {
       <p className="icard__sub">{d.sub}</p>
 
       <div className="icard__body flex flex-col gap-3">
+        {/* Adresse */}
         <div
-          className="rounded-xl p-3 bg-white flex items-center justify-between gap-3"
+          className="rounded-xl p-3.5 bg-white flex items-center justify-between gap-3"
           style={{ border: "1.5px solid rgba(24,20,16,0.14)" }}
         >
           <div className="min-w-0 flex-1">
-            <p className="field__label" style={{ marginBottom: ".25rem" }}>{d.addrLabel}</p>
-            <p className="font-mono text-sm truncate">{FORWARD_ADDRESS}</p>
+            <p className="field__label" style={{ marginBottom: ".3rem" }}>{d.addrLabel}</p>
+            <p className="font-mono text-sm font-medium" style={{ wordBreak: "break-all" }}>
+              {FORWARD_ADDRESS}
+            </p>
           </div>
           <button
             type="button"
@@ -51,9 +50,24 @@ export function ForwardCard({ locale }: { locale: Locale }) {
           </button>
         </div>
 
-        <div className="rounded-xl p-3 bg-white" style={{ border: "1.5px solid rgba(24,20,16,0.14)" }}>
-          <p className="field__label" style={{ marginBottom: ".25rem" }}>{d.subjLabel}</p>
-          <p className="font-mono text-sm truncate">{subjectTemplate}</p>
+        {/* Betreff — die eigene E-Mail klar hervorgehoben, nichts abgeschnitten */}
+        <div className="rounded-xl p-3.5 bg-white" style={{ border: "1.5px solid rgba(24,20,16,0.14)" }}>
+          <p className="field__label" style={{ marginBottom: ".45rem" }}>{d.subjLabel}</p>
+          <p className="font-mono text-sm" style={{ lineHeight: 1.6, wordBreak: "break-word" }}>
+            <span
+              style={{
+                background: "color-mix(in oklab, var(--accent) 16%, transparent)",
+                color: "var(--accent)",
+                fontWeight: 600,
+                padding: ".12rem .4rem",
+                borderRadius: 6,
+              }}
+            >
+              [{d.emailToken}]
+            </span>{" "}
+            {d.subjectMaterial}
+          </p>
+          <p className="text-xs mt-2" style={{ color: "var(--soft)" }}>{d.subjectHint}</p>
         </div>
 
         <ol className="text-sm flex flex-col gap-2 mt-1" style={{ color: "var(--soft)" }}>

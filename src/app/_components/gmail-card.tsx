@@ -1,12 +1,13 @@
 "use client";
 
+import { useActionState } from "react";
+import { useFormStatus } from "react-dom";
+import { requestGmailAccess, type GmailAccessState } from "@/app/actions/gmail-access";
 import { t, type Locale } from "@/lib/i18n";
-
-const CONTACT = "hello@appsales-consulting.de";
 
 export function GoogleCard({ locale }: { locale: Locale }) {
   const d = t(locale).sources.google;
-  const subject = encodeURIComponent("Brand Voice Profile – Gmail-Connect");
+  const [state, formAction] = useActionState<GmailAccessState, FormData>(requestGmailAccess, {});
 
   return (
     <article className="icard">
@@ -25,15 +26,47 @@ export function GoogleCard({ locale }: { locale: Locale }) {
           ))}
         </ul>
 
-        <a
-          href={`mailto:${CONTACT}?subject=${subject}`}
-          className="pill pill--ink pill--arrow self-start"
-        >
-          {locale === "de" ? "Freischaltung anfragen" : "Request access"}
-        </a>
+        {state.ok ? (
+          <p
+            className="rounded-xl px-4 py-3 text-sm"
+            style={{ background: "color-mix(in oklab, var(--accent) 12%, transparent)", color: "var(--accent)" }}
+          >
+            {d.requested}
+          </p>
+        ) : (
+          <form action={formAction} className="flex flex-col gap-3">
+            <input type="hidden" name="locale" value={locale} />
+            <input type="text" name="company" tabIndex={-1} autoComplete="off" aria-hidden className="hp" />
+            <div>
+              <label htmlFor="gmail" className="field__label">{d.emailLabel}</label>
+              <input
+                id="gmail"
+                name="gmail"
+                type="email"
+                required
+                autoComplete="email"
+                placeholder={d.emailPlaceholder}
+                className="field"
+              />
+            </div>
+            {state.error && (
+              <p className="text-sm" style={{ color: "var(--coral-deep)" }}>{state.error}</p>
+            )}
+            <SubmitButton cta={d.cta} pendingLabel={d.ctaPending} />
+          </form>
+        )}
 
         <p className="text-xs" style={{ color: "var(--soft)" }}>{d.note}</p>
       </div>
     </article>
+  );
+}
+
+function SubmitButton({ cta, pendingLabel }: { cta: string; pendingLabel: string }) {
+  const { pending } = useFormStatus();
+  return (
+    <button type="submit" disabled={pending} className="pill pill--ink pill--arrow self-start">
+      {pending ? pendingLabel : cta}
+    </button>
   );
 }
