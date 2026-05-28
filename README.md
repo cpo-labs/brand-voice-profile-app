@@ -43,6 +43,11 @@ persistiert — nur das daraus generierte Voice-Profil.
 - **Rate-Limit-Race:** zwischen `checkLimit` und `recordRun` liegt ein
   Single-Roundtrip-Window. Bei strikt parallelen Requests mit gleicher E-Mail
   können beide den Limit-Check passieren. Für Lead-Magnet-Volumen unkritisch.
+- **Failed-Run zählt gegen Limit:** wenn Anthropic während der Generation
+  scheitert (Timeout, Parse-Error), bleibt der `profile_run`-Eintrag bestehen
+  und der User hat seinen Slot verbraucht, ohne ein Profil zu bekommen. Der
+  Support-Pfad ist manuell — User schreibt an `CONTACT_EMAIL`, Slot wird per
+  DB-Eintrag-Löschung freigeschaltet.
 - **File-Validation per Extension** (kein MIME-Check, kein ZIP-Bomb-Schutz).
   Akzeptabel für vertrauensbasierten Lead-Magnet-Flow, nicht für Public-Open-Upload.
 - **bodySizeLimit** der Server Action steht auf 10 MB (siehe `next.config.ts`).
