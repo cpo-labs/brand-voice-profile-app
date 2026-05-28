@@ -41,7 +41,7 @@ export async function checkLimit(email: string): Promise<LimitCheck> {
       allowed: false,
       reason: "per-email",
       remaining: 0,
-      message: `Du hast bereits ${emailCount} Profil(e) generiert. Für ein weiteres Profil schreib mir kurz — Kontakt unten auf der Seite.`,
+      message: `Du hast bereits ${emailCount} Profil(e) generiert. Für ein weiteres Profil schreib uns kurz — Kontakt unten auf der Seite.`,
     };
   }
 
@@ -50,7 +50,7 @@ export async function checkLimit(email: string): Promise<LimitCheck> {
       allowed: false,
       reason: "global",
       remaining: 0,
-      message: `Diesen Monat sind die Free-Plätze ausgeschöpft (${GLOBAL_MONTHLY}/${GLOBAL_MONTHLY}). Schreib mir, wenn du nicht warten willst.`,
+      message: `Diesen Monat sind die Free-Plätze ausgeschöpft (${GLOBAL_MONTHLY}/${GLOBAL_MONTHLY}). Schreib uns, wenn du nicht warten willst.`,
     };
   }
 

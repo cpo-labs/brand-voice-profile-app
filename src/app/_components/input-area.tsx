@@ -9,18 +9,21 @@ const STORAGE_KEY = "bvp:email";
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function InputArea() {
+  const [mounted, setMounted] = useState(false);
   const [email, setEmail] = useState("");
   const [touched, setTouched] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
 
-  // Restore email if user revisits the page
+  // Restore email if user revisits the page. The `mounted` gate keeps the
+  // SSR-rendered form deterministic (empty state) so React does not flag a
+  // hydration mismatch on the input value or the "Weiter"/"Ändern" swap.
   useEffect(() => {
-    if (typeof window === "undefined") return;
     const stored = window.localStorage.getItem(STORAGE_KEY);
     if (stored && EMAIL_RE.test(stored)) {
       setEmail(stored);
       setConfirmed(true);
     }
+    setMounted(true);
   }, []);
 
   const valid = EMAIL_RE.test(email);
@@ -52,13 +55,14 @@ export function InputArea() {
             required
             autoComplete="email"
             placeholder="du@beispiel.de"
-            value={email}
+            value={mounted ? email : ""}
             onChange={(e) => setEmail(e.target.value)}
             onBlur={() => setTouched(true)}
-            disabled={confirmed}
+            disabled={mounted && confirmed}
+            suppressHydrationWarning
             className="flex-1 bg-[var(--color-cream)] text-[var(--color-ink)] border-2 border-transparent rounded-2xl px-5 py-4 text-base outline-none focus:border-[var(--color-coral)] transition-colors disabled:opacity-70"
           />
-          {!confirmed && (
+          {(!mounted || !confirmed) && (
             <button
               type="submit"
               disabled={!valid}
@@ -67,7 +71,7 @@ export function InputArea() {
               Weiter
             </button>
           )}
-          {confirmed && (
+          {mounted && confirmed && (
             <button
               type="button"
               onClick={() => {

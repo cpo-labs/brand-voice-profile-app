@@ -75,11 +75,11 @@ function setupPendingHtml(email: string): string {
     <p class="tag">Phase 2 · in Vorbereitung</p>
     <h1>Gmail-Verbindung wird gerade scharf gemacht.</h1>
     <p>Die OAuth-Verifikation bei Google ist beantragt, dauert aber meist 1–2 Werktage. Solange drück nicht auf &bdquo;Verbinden&ldquo; — sondern nutz den <strong>Drop&nbsp;&amp;&nbsp;Generate</strong>-Weg oder die <strong>Forward-Inbox</strong>.</p>
-    <p class="muted">Wenn du Gmail trotzdem jetzt nutzen willst: schreib mir kurz, ich schalte dich manuell frei. ${safeEmail ? `Deine Adresse <strong>${safeEmail}</strong> hab ich gleich mit.` : ""}</p>
+    <p class="muted">Wenn du Gmail trotzdem jetzt nutzen willst: schreib uns kurz, wir schalten dich manuell frei. ${safeEmail ? `Deine Adresse <strong>${safeEmail}</strong> haben wir gleich mit.` : ""}</p>
     <p>
       <a class="pill" href="mailto:${CONTACT_EMAIL}?subject=Brand%20Voice%20Profile%20-%20Gmail%20Beta&body=${encodeURIComponent(
-        `Hi Christian,\n\nich würde Brand Voice Profile mit Gmail-Verbindung testen.\nMeine Adresse: ${safeEmail || "(bitte eintragen)"}\n\nDanke!\n`
-      )}">Schreib mir</a>
+        `Hallo Labs-Team,\n\nich würde Brand Voice Profile mit Gmail-Verbindung testen.\nMeine Adresse: ${safeEmail || "(bitte eintragen)"}\n\nDanke!\n`
+      )}">Schreib uns</a>
     </p>
     <a class="back" href="/">&larr; Zurück</a>
   </main>

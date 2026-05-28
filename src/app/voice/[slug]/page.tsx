@@ -173,14 +173,14 @@ export default async function VoiceProfilePage({ params }: Props) {
               style={{ color: "rgba(250,247,242,0.78)" }}
             >
               Ein Profil pro E-Mail ist die Demo. Wenn du mehrere Profile, eine
-              Team-Variante oder Integration in deinen Workflow brauchst,
-              schreib mir kurz.
+              Team-Variante oder Integration in euren Workflow braucht,
+              schreib uns kurz.
             </p>
             <a
               href={`mailto:${CONTACT_EMAIL}?subject=Brand%20Voice%20Profile%20-%20Anfrage`}
               className="pill pill--light pill--arrow"
             >
-              Schreib mir
+              Schreib uns
             </a>
           </div>
         </div>

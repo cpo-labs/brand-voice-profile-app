@@ -42,7 +42,7 @@ export async function generateProfile(
   if (!limit.allowed) {
     return {
       error:
-        limit.message ?? "Limit erreicht. Schreib mir, wenn du mehr willst.",
+        limit.message ?? "Limit erreicht. Schreib uns, wenn du mehr willst.",
     };
   }
 

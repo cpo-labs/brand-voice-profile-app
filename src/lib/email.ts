@@ -58,7 +58,7 @@ function profileHtml(permalink: string): string {
     <p style="margin-bottom:32px">
       <a href="${permalink}" style="display:inline-block;background:#181410;color:#FAF7F2;padding:14px 28px;border-radius:100px;font-weight:600;text-decoration:none">Profil &ouml;ffnen &rarr;</a>
     </p>
-    <p style="font-size:13px;color:#5C544B">Frag mich nicht, warum mein E-Mail-Footer so kurz ist. Christian.</p>
+    <p style="font-size:13px;color:#5C544B">Das Labs-Team</p>
   </div>
 </body></html>`;
 }

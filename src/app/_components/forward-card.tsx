@@ -9,20 +9,34 @@ interface Props {
 
 const FORWARD_ADDRESS = "voice-inbox@labs.appsales-consulting.de";
 
+type CopyState =
+  | { kind: "idle" }
+  | { kind: "ok"; target: "address" | "subject" }
+  | { kind: "fail"; target: "address" | "subject" };
+
 export function ForwardCard({ email, emailConfirmed }: Props) {
-  const [copied, setCopied] = useState<"address" | "subject" | null>(null);
+  const [copyState, setCopyState] = useState<CopyState>({ kind: "idle" });
   const subject = email
     ? `[${email}] Mein Voice-Material`
     : "[deine@email.de] Mein Voice-Material";
 
-  async function copy(text: string, key: "address" | "subject") {
+  async function copy(text: string, target: "address" | "subject") {
     try {
       await navigator.clipboard.writeText(text);
-      setCopied(key);
-      setTimeout(() => setCopied(null), 1500);
+      setCopyState({ kind: "ok", target });
+      setTimeout(() => setCopyState({ kind: "idle" }), 1500);
     } catch {
-      // ignore
+      // Clipboard API can be blocked (Firefox without user gesture, HTTP origin, etc.)
+      setCopyState({ kind: "fail", target });
+      setTimeout(() => setCopyState({ kind: "idle" }), 2500);
     }
+  }
+
+  function copyLabel(target: "address" | "subject"): string {
+    if (copyState.kind === "ok" && copyState.target === target) return "Kopiert!";
+    if (copyState.kind === "fail" && copyState.target === target)
+      return "Manuell markieren";
+    return "Kopieren";
   }
 
   const disabled = !emailConfirmed;
@@ -56,7 +70,7 @@ export function ForwardCard({ email, emailConfirmed }: Props) {
             className="text-xs underline decoration-[var(--color-coral)] underline-offset-4 flex-none"
             style={{ color: "var(--color-coral)" }}
           >
-            {copied === "address" ? "Kopiert!" : "Kopieren"}
+            {copyLabel("address")}
           </button>
         </div>
 
@@ -77,7 +91,7 @@ export function ForwardCard({ email, emailConfirmed }: Props) {
             className="text-xs underline decoration-[var(--color-coral)] underline-offset-4 flex-none disabled:opacity-30 disabled:cursor-not-allowed"
             style={{ color: "var(--color-coral)" }}
           >
-            {copied === "subject" ? "Kopiert!" : "Kopieren"}
+            {copyLabel("subject")}
           </button>
         </div>
 
@@ -101,7 +115,7 @@ export function ForwardCard({ email, emailConfirmed }: Props) {
 
         <p className="text-xs mt-2" style={{ color: "var(--color-soft)" }}>
           Inbox-Receiver wird gerade scharf gemacht. Wenn du jetzt forwarden
-          willst und sofort durchgeschaltet werden willst, schreib mir kurz.
+          und sofort durchgeschaltet werden willst, schreib uns kurz.
         </p>
       </div>
     </article>
