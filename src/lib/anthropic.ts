@@ -7,4 +7,4 @@ if (!apiKey) {
 
 export const anthropic = new Anthropic({ apiKey });
 
-export const VOICE_MODEL = "claude-sonnet-4-5";
+export const VOICE_MODEL = "claude-sonnet-4-6";
