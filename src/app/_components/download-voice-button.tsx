@@ -3,9 +3,10 @@
 interface Props {
   voiceMd: string;
   slug: string;
+  label?: string;
 }
 
-export function DownloadVoiceButton({ voiceMd, slug }: Props) {
+export function DownloadVoiceButton({ voiceMd, slug, label = "VOICE.md herunterladen" }: Props) {
   function download() {
     const blob = new Blob([voiceMd], { type: "text/markdown" });
     const url = URL.createObjectURL(blob);
@@ -24,7 +25,7 @@ export function DownloadVoiceButton({ voiceMd, slug }: Props) {
       onClick={download}
       className="pill pill--ink pill--arrow"
     >
-      VOICE.md herunterladen
+      {label}
     </button>
   );
 }

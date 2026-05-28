@@ -9,6 +9,7 @@ import { extractVoice } from "@/lib/voice-extraction";
 import { attachProfileToRun, checkLimit, recordRun } from "@/lib/rate-limit";
 import { generateSlug } from "@/lib/slug";
 import { sendProfileReady } from "@/lib/email";
+import { t, type Locale } from "@/lib/i18n";
 
 const EmailSchema = z.string().email().max(254);
 
@@ -20,30 +21,30 @@ export async function generateProfile(
   _prev: GenerateState,
   formData: FormData
 ): Promise<GenerateState> {
+  const locale: Locale = formData.get("locale") === "en" ? "en" : "de";
+  const e = t(locale).errors;
+
   // Honeypot — bots that auto-fill all visible inputs trip this
   const honeypot = formData.get("website");
   if (typeof honeypot === "string" && honeypot.length > 0) {
-    return { error: "Etwas ist schiefgelaufen. Probiere es nochmal." };
+    return { error: e.generic };
   }
 
   const emailRaw = formData.get("email");
   const parsed = EmailSchema.safeParse(emailRaw);
   if (!parsed.success) {
-    return { error: "Bitte gib eine gültige E-Mail-Adresse ein." };
+    return { error: e.invalidEmail };
   }
   const email = parsed.data.toLowerCase().trim();
 
   const files = formData.getAll("files").filter((f): f is File => f instanceof File);
   if (files.length === 0) {
-    return { error: "Keine Dateien hochgeladen." };
+    return { error: e.noFiles };
   }
 
   const limit = await checkLimit(email);
   if (!limit.allowed) {
-    return {
-      error:
-        limit.message ?? "Limit erreicht. Schreib uns, wenn du mehr willst.",
-    };
+    return { error: limit.message ?? e.limitFallback };
   }
 
   // Reserve the slot before the expensive Anthropic call so parallel

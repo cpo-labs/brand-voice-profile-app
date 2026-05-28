@@ -3,26 +3,21 @@
 import { useActionState, useEffect, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { generateProfile, type GenerateState } from "@/app/actions/generate";
+import { t, type Locale } from "@/lib/i18n";
 
 const ACCEPT = ".txt,.md,.markdown,.pdf,.docx";
 const MAX_FILES = 20;
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
-interface Props {
-  email: string;
-  emailConfirmed: boolean;
-}
-
-export function DragDropCard({ email, emailConfirmed }: Props) {
-  const [state, formAction] = useActionState<GenerateState, FormData>(
-    generateProfile,
-    {}
-  );
+export function DropCard({ locale }: { locale: Locale }) {
+  const d = t(locale).sources.drop;
+  const [state, formAction] = useActionState<GenerateState, FormData>(generateProfile, {});
   const [files, setFiles] = useState<File[]>([]);
   const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const filesRef = useRef<HTMLInputElement>(null);
 
+  // Keep the hidden multi-file input in sync so the Server Action receives them.
   useEffect(() => {
     if (!filesRef.current) return;
     const dt = new DataTransfer();
@@ -44,62 +39,39 @@ export function DragDropCard({ email, emailConfirmed }: Props) {
     });
   }
 
-  const disabled = !emailConfirmed;
-  const canSubmit = emailConfirmed && files.length > 0;
-
   return (
-    <article className={`icard ${disabled ? "opacity-50 pointer-events-none" : ""}`}>
-      <p className="icard__num">01 · Drop &amp; Generate</p>
-      <h3 className="icard__title">Texte direkt hochladen</h3>
-      <p className="icard__sub">
-        Ein paar PDFs, DOCX, MD oder TXT — was du eh schon geschrieben hast.
-        Schnellster Weg, kein Account-Verbindungs-Wahnsinn.
-      </p>
+    <article className="icard">
+      <p className="icard__num">{d.num}</p>
+      <h3 className="icard__title">{d.title}</h3>
+      <p className="icard__sub">{d.sub}</p>
 
       <form action={formAction} className="flex flex-col gap-4 icard__body">
-        <input type="hidden" name="email" value={email} />
-        <input
-          type="text"
-          name="website"
-          tabIndex={-1}
-          autoComplete="off"
-          aria-hidden
-          className="absolute left-[-9999px] w-1 h-1 opacity-0"
-        />
+        <input type="text" name="website" tabIndex={-1} autoComplete="off" aria-hidden className="hp" />
+        <input type="hidden" name="locale" value={locale} />
 
         <div
-          onDragOver={(e) => {
-            e.preventDefault();
-            if (!disabled) setDragOver(true);
-          }}
+          onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
           onDragLeave={() => setDragOver(false)}
           onDrop={(e) => {
             e.preventDefault();
             setDragOver(false);
-            if (!disabled && e.dataTransfer.files.length)
-              addFiles(e.dataTransfer.files);
+            if (e.dataTransfer.files.length) addFiles(e.dataTransfer.files);
           }}
-          onClick={() => !disabled && inputRef.current?.click()}
+          onClick={() => inputRef.current?.click()}
           role="button"
-          tabIndex={disabled ? -1 : 0}
+          tabIndex={0}
           onKeyDown={(e) => {
-            if (disabled) return;
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              inputRef.current?.click();
-            }
+            if (e.key === "Enter" || e.key === " ") { e.preventDefault(); inputRef.current?.click(); }
           }}
-          className={`cursor-pointer border-2 border-dashed rounded-2xl p-6 text-center transition-colors ${
-            dragOver
-              ? "border-[var(--color-coral)] bg-[var(--color-cream-2)]"
-              : "border-[var(--color-ink)] hover:border-[var(--color-coral)]"
-          }`}
+          className="cursor-pointer border-2 border-dashed rounded-2xl p-6 text-center transition-colors"
+          style={{
+            borderColor: dragOver ? "var(--accent)" : "rgba(24,20,16,0.22)",
+            background: dragOver ? "var(--cream-2)" : "transparent",
+          }}
         >
-          <p className="label-mono mb-1">Deine Texte</p>
-          <p className="font-semibold">Drop · Click · Pick</p>
-          <p className="text-xs mt-1" style={{ color: "var(--color-soft)" }}>
-            TXT · MD · PDF · DOCX
-          </p>
+          <p className="label-mono mb-1">{d.zoneLead}</p>
+          <p className="font-semibold">{d.zoneTitle}</p>
+          <p className="text-xs mt-1" style={{ color: "var(--soft)" }}>{d.zoneHint}</p>
           <input
             ref={inputRef}
             type="file"
@@ -113,15 +85,7 @@ export function DragDropCard({ email, emailConfirmed }: Props) {
           />
         </div>
 
-        <input
-          ref={filesRef}
-          type="file"
-          name="files"
-          multiple
-          className="hidden"
-          tabIndex={-1}
-          aria-hidden
-        />
+        <input ref={filesRef} type="file" name="files" multiple className="hidden" tabIndex={-1} aria-hidden />
 
         {files.length > 0 && (
           <ul className="flex flex-col gap-2 max-h-[180px] overflow-y-auto">
@@ -135,8 +99,9 @@ export function DragDropCard({ email, emailConfirmed }: Props) {
                 <button
                   type="button"
                   onClick={() => setFiles((prev) => prev.filter((_, j) => j !== i))}
-                  className="text-xs ml-3"
-                  style={{ color: "var(--color-coral)" }}
+                  className="text-base ml-3 leading-none"
+                  style={{ color: "var(--accent)" }}
+                  aria-label="remove"
                 >
                   ×
                 </button>
@@ -145,38 +110,46 @@ export function DragDropCard({ email, emailConfirmed }: Props) {
           </ul>
         )}
 
+        <div>
+          <label htmlFor="bvp-email" className="field__label">{d.emailLabel}</label>
+          <input
+            id="bvp-email"
+            name="email"
+            type="email"
+            required
+            autoComplete="email"
+            placeholder={d.emailPlaceholder}
+            className="field"
+          />
+          <p className="text-xs mt-1.5" style={{ color: "var(--soft)" }}>{d.emailHint}</p>
+        </div>
+
         {state?.error && (
           <p
             className="text-sm rounded-xl px-3 py-2"
-            style={{
-              background: "rgba(230,80,66,0.12)",
-              color: "var(--color-coral-deep)",
-            }}
+            style={{ background: "rgba(230,80,66,0.12)", color: "var(--coral-deep)" }}
           >
             {state.error}
           </p>
         )}
 
-        <SubmitButton disabled={!canSubmit} />
+        <SubmitButton label={d.cta} pendingLabel={d.ctaPending} disabled={files.length === 0} />
 
-        <p className="text-xs" style={{ color: "var(--color-soft)" }}>
-          Max 20 Files · 5 MB pro File. Wir speichern nur das generierte Profil,
-          nicht die Quelltexte.
-        </p>
+        <p className="text-xs" style={{ color: "var(--soft)" }}>{d.note}</p>
       </form>
     </article>
   );
 }
 
-function SubmitButton({ disabled }: { disabled: boolean }) {
+function SubmitButton({ label, pendingLabel, disabled }: { label: string; pendingLabel: string; disabled: boolean }) {
   const { pending } = useFormStatus();
   return (
     <button
       type="submit"
       disabled={disabled || pending}
-      className="pill pill--ink pill--arrow disabled:opacity-50 disabled:cursor-not-allowed self-start"
+      className="pill pill--ink pill--arrow self-start"
     >
-      {pending ? "Generiere…" : "Profil generieren"}
+      {pending ? pendingLabel : label}
     </button>
   );
 }

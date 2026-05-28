@@ -6,12 +6,13 @@ import { SiteHeader } from "@/app/_components/site-header";
 import { SiteFooter } from "@/app/_components/site-footer";
 import { CopyBlock } from "@/app/_components/copy-block";
 import { DownloadVoiceButton } from "@/app/_components/download-voice-button";
+import { getLocale } from "@/lib/i18n-server";
+import { t } from "@/lib/i18n";
 
 // Per-Request-DB-Lookup nach Slug — nie statisch prerendern.
 export const dynamic = "force-dynamic";
 
-const CONTACT_EMAIL =
-  process.env.CONTACT_EMAIL ?? "hello@appsales-consulting.de";
+const CONTACT_EMAIL = process.env.CONTACT_EMAIL ?? "hello@appsales-consulting.de";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -27,202 +28,128 @@ export async function generateMetadata({ params }: Props) {
 
 export default async function VoiceProfilePage({ params }: Props) {
   const { slug } = await params;
-  const rows = await db
-    .select()
-    .from(profile)
-    .where(eq(profile.slug, slug))
-    .limit(1);
+  const locale = await getLocale();
+  const d = t(locale).result;
+  const copy = { copyLabel: t(locale).sources.forward.copy, copiedLabel: t(locale).sources.forward.copied };
+
+  const rows = await db.select().from(profile).where(eq(profile.slug, slug)).limit(1);
   const p = rows[0];
   if (!p) notFound();
 
   // Drizzle `mode: "timestamp"` liefert bereits ein Date.
   const created = p.createdAt as Date;
+  const dateStr = created.toLocaleDateString(locale === "de" ? "de-DE" : "en-US", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
+  const wordsStr = p.sourceWordCount.toLocaleString(locale === "de" ? "de-DE" : "en-US");
 
   return (
     <>
-      <SiteHeader theme="cream" />
+      <SiteHeader theme="cream" locale={locale} />
 
-      <header className="gut pt-32 pb-12 max-w-[1100px] mx-auto">
-        <p className="label-mono mb-4">Dein Voice Profile</p>
-        <h1 className="display-l mb-4 max-w-[18ch]">
-          Fertig. Jedes LLM kann jetzt wie du schreiben.
-        </h1>
-        <p
-          className="text-base"
-          style={{ color: "var(--color-soft)" }}
-        >
-          Aus {p.sourceFileCount} Datei{p.sourceFileCount === 1 ? "" : "en"}{" "}
-          mit {p.sourceWordCount.toLocaleString("de-DE")} Wörtern ·{" "}
-          generiert am{" "}
-          {created.toLocaleDateString("de-DE", {
-            day: "2-digit",
-            month: "long",
-            year: "numeric",
-          })}
+      <header className="wrap pt-32 pb-10">
+        <p className="eyebrow">{d.tag}</p>
+        <h1 className="display-l mb-4 max-w-[20ch]">{d.title}</h1>
+        <p className="text-base" style={{ color: "var(--soft)" }}>
+          {d.metaFrom(p.sourceFileCount, wordsStr, dateStr)}
         </p>
       </header>
 
-      {/* Proof — sichtbarer Vorher/Nachher */}
-      <section className="gut pb-16 max-w-[1100px] mx-auto">
-        <p className="label-mono mb-3" style={{ color: "var(--color-coral)" }}>
-          Beweis
-        </p>
-        <h2 className="display-l mb-8 max-w-[22ch]">
-          Gleicher Prompt, anderes Ergebnis.
-        </h2>
-
-        <div
-          className="rounded-2xl p-5 mb-6 font-mono text-sm leading-relaxed"
-          style={{
-            background: "var(--color-ink-deep)",
-            color: "var(--color-cream)",
-          }}
-        >
-          <span
-            className="label-mono mr-2"
-            style={{ color: "rgba(250,247,242,0.5)" }}
-          >
-            Prompt
-          </span>
-          {p.proofPrompt}
-        </div>
-
-        <div className="grid md:grid-cols-2 gap-4">
-          <ProofCard
-            label="Generischer LLM-Output"
-            tone="muted"
-            body={p.proofBefore}
-          />
-          <ProofCard
-            label="Mit deinem Voice Profile"
-            tone="coral"
-            body={p.proofAfter}
-          />
-        </div>
-      </section>
-
-      {/* VOICE.md */}
-      <section className="gut pb-16 max-w-[1100px] mx-auto">
+      {/* HELD: VOICE.md + Download + so benutzt du es */}
+      <section className="wrap pb-12">
         <div className="surface p-6 md:p-10">
           <div className="flex flex-wrap items-start justify-between gap-4 mb-6">
             <div>
-              <p className="label-mono mb-2">Vollständiges Profil</p>
-              <h2 className="text-2xl md:text-3xl font-bold tracking-tight">
-                VOICE.md
-              </h2>
+              <p className="hfile hfile--dark">VOICE.md</p>
+              <h2 className="text-2xl md:text-3xl font-bold tracking-tight">{d.voiceLabel}</h2>
             </div>
-            <DownloadVoiceButton voiceMd={p.voiceMd} slug={p.slug} />
+            <DownloadVoiceButton voiceMd={p.voiceMd} slug={p.slug} label={d.download} />
           </div>
           <pre
             className="text-sm leading-relaxed whitespace-pre-wrap font-mono p-5 rounded-xl overflow-x-auto"
-            style={{ background: "#fff", color: "var(--color-ink)" }}
+            style={{ background: "#fff", color: "var(--ink)" }}
           >
             {p.voiceMd}
           </pre>
         </div>
       </section>
 
-      {/* Drop-in cards */}
-      <section className="gut pb-20 max-w-[1100px] mx-auto">
-        <p className="label-mono mb-3">Drop-in für dein LLM</p>
-        <h2 className="display-l mb-8 max-w-[22ch]">
-          Kompakt-Versionen, sofort einsetzbar.
-        </h2>
+      {/* Drop-in: so benutzt du es */}
+      <section className="wrap pb-16">
+        <p className="eyebrow">{d.howEyebrow}</p>
+        <h2 className="display-l mb-3 max-w-[22ch]">{d.howTitle}</h2>
+        <p className="mb-8 max-w-[54ch]" style={{ color: "var(--soft)" }}>{d.howIntro}</p>
         <div className="grid md:grid-cols-3 gap-6">
-          <CopyBlock
-            tool="ChatGPT"
-            where="Custom Instructions → How would you like ChatGPT to respond?"
-            value={p.dropInChatgpt}
-          />
-          <CopyBlock
-            tool="Claude"
-            where="Project → Project Knowledge → Set custom instructions"
-            value={p.dropInClaude}
-          />
-          <CopyBlock
-            tool="Gemini"
-            where="Gem manager → System instructions"
-            value={p.dropInGemini}
-          />
+          <CopyBlock tool="ChatGPT" where={d.chatgptWhere} value={p.dropInChatgpt} {...copy} />
+          <CopyBlock tool="Claude" where={d.claudeWhere} value={p.dropInClaude} {...copy} />
+          <CopyBlock tool="Gemini" where={d.geminiWhere} value={p.dropInGemini} {...copy} />
+        </div>
+      </section>
+
+      {/* Beweis — sichtbarer Vorher/Nachher */}
+      <section className="wrap pb-16">
+        <p className="eyebrow">{d.proofEyebrow}</p>
+        <h2 className="display-l mb-8 max-w-[22ch]">{d.proofTitle}</h2>
+
+        <div
+          className="rounded-2xl p-5 mb-6 font-mono text-sm leading-relaxed"
+          style={{ background: "var(--ink-deep)", color: "var(--cream)" }}
+        >
+          <span className="label-mono mr-2" style={{ color: "rgba(250,247,242,0.5)" }}>{d.promptLabel}</span>
+          {p.proofPrompt}
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-4">
+          <ProofCard label={d.proofBefore} tone="muted" body={p.proofBefore} />
+          <ProofCard label={d.proofAfter} tone="accent" body={p.proofAfter} />
         </div>
       </section>
 
       {/* CTA */}
-      <section className="gut py-20 max-w-[1100px] mx-auto">
-        <div
-          className="surface--ink p-8 md:p-12 relative overflow-hidden"
-        >
+      <section className="wrap py-16">
+        <div className="surface--ink p-8 md:p-12 relative overflow-hidden">
           <div
             aria-hidden
             className="absolute -top-20 -right-10 w-[28vmax] h-[28vmax] z-0 pointer-events-none"
             style={{
-              background: "var(--color-coral)",
-              opacity: 0.18,
+              background: "var(--accent)",
+              opacity: 0.2,
               filter: "blur(48px)",
               borderRadius: "46% 54% 62% 38% / 52% 44% 56% 48%",
             }}
           />
           <div className="relative z-10">
-            <p
-              className="label-mono mb-3"
-              style={{ color: "var(--color-coral)" }}
-            >
-              Du willst mehr?
-            </p>
-            <h2 className="display-l mb-4 max-w-[22ch]">
-              Du brauchst sowas für dein Team oder eine andere Person?
-            </h2>
-            <p
-              className="text-lg mb-6 max-w-[42ch]"
-              style={{ color: "rgba(250,247,242,0.78)" }}
-            >
-              Ein Profil pro E-Mail ist die Demo. Wenn du mehrere Profile, eine
-              Team-Variante oder Integration in deinen Workflow brauchst,
-              schreib uns kurz.
-            </p>
+            <p className="label-mono mb-3" style={{ color: "var(--accent)" }}>{d.ctaEyebrow}</p>
+            <h2 className="display-l mb-4 max-w-[24ch]">{d.ctaTitle}</h2>
+            <p className="text-lg mb-6 max-w-[44ch]" style={{ color: "rgba(250,247,242,0.78)" }}>{d.ctaText}</p>
             <a
               href={`mailto:${CONTACT_EMAIL}?subject=Brand%20Voice%20Profile%20-%20Anfrage`}
-              className="pill pill--light pill--arrow"
+              className="pill pill--accent pill--arrow"
             >
-              Schreib uns
+              {d.ctaButton}
             </a>
           </div>
         </div>
       </section>
 
-      <SiteFooter />
+      <SiteFooter locale={locale} />
     </>
   );
 }
 
-function ProofCard({
-  label,
-  body,
-  tone,
-}: {
-  label: string;
-  body: string;
-  tone: "muted" | "coral";
-}) {
-  const isCoral = tone === "coral";
+function ProofCard({ label, body, tone }: { label: string; body: string; tone: "muted" | "accent" }) {
+  const isAccent = tone === "accent";
   return (
     <div
       className="rounded-2xl p-6 flex flex-col"
       style={{
-        background: isCoral ? "var(--color-ink)" : "var(--color-cream-2)",
-        color: isCoral ? "var(--color-cream)" : "var(--color-ink)",
+        background: isAccent ? "var(--ink)" : "var(--cream-2)",
+        color: isAccent ? "var(--cream)" : "var(--ink)",
       }}
     >
-      <p
-        className="label-mono mb-3"
-        style={{
-          color: isCoral
-            ? "var(--color-coral)"
-            : "var(--color-soft)",
-        }}
-      >
-        {label}
-      </p>
+      <p className="label-mono mb-3" style={{ color: isAccent ? "var(--accent)" : "var(--soft)" }}>{label}</p>
       <p className="leading-relaxed whitespace-pre-wrap">{body}</p>
     </div>
   );
