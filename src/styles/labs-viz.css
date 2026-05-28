@@ -1,0 +1,143 @@
+/* ============================================================================
+   labs-viz.css — handgebaute UI-Visuals aus labs.appsales-consulting.de.
+   Dunkle Gradient-Karten, die var(--accent) lesen und sich pro App re-themen.
+   Statt Stock-Bildern. Eindeutige Klassennamen, kollidiert nicht mit labs-kit.
+   ============================================================================ */
+
+/* ---- Mono-Dateiname-Label über einem Element (labs.google "Aurora.jpg") ---- */
+.hfile {
+  display: inline-flex; align-items: center; gap: .4rem;
+  font-family: var(--mono); font-size: .66rem; letter-spacing: .02em;
+  color: rgba(250, 247, 242, .62); white-space: nowrap; margin-bottom: .55rem;
+}
+.hfile--dark { color: rgba(24, 20, 16, .55); }
+.hfile::before { content: ""; width: .7rem; height: .7rem; border-radius: 3px; background: var(--accent); opacity: .85; flex: none; }
+
+/* ---- generische dunkle Snippet-Karte ---- */
+.hsnip {
+  position: relative; border-radius: 20px; padding: 1.15rem 1.2rem; overflow: hidden;
+  background: linear-gradient(158deg, #423a32 0%, #2e261f 50%, #211a14 100%);
+  border: 1.5px solid rgba(250, 247, 242, .24);
+  box-shadow: 0 46px 92px -42px rgba(0, 0, 0, .8), inset 0 1px 0 rgba(250, 247, 242, .09);
+  color: var(--cream);
+}
+.hsnip::before { content: ""; position: absolute; left: 1.2rem; right: 1.2rem; top: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--accent), transparent); opacity: .6; }
+.hsnip__cap { font-family: var(--mono); font-size: .62rem; letter-spacing: .1em; text-transform: uppercase; color: rgba(250, 247, 242, .55); margin-bottom: .75rem; }
+/* petrol-getönte Variante für Kalender/Briefing-Snippets */
+.hsnip--petrol { background: linear-gradient(168deg, #262d33 0%, #1c2227 60%, #171c20 100%); border-color: rgba(250, 247, 242, .22); }
+
+/* ---- Field-Note-Visual-Container (Karte schwebt auf akzent-radial) ---- */
+.nviz {
+  position: relative; overflow: hidden;
+  display: flex; align-items: center; justify-content: center; padding: 1.6rem;
+  border-radius: var(--rm);
+  background: radial-gradient(125% 115% at 76% 16%, color-mix(in oklab, var(--accent) 32%, #241d17) 0%, #1b1611 66%);
+}
+.nviz::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background-image: linear-gradient(rgba(250, 247, 242, .055) 1px, transparent 1px), linear-gradient(90deg, rgba(250, 247, 242, .055) 1px, transparent 1px);
+  background-size: 32px 32px;
+  -webkit-mask-image: radial-gradient(115% 105% at 72% 26%, #000, transparent 82%);
+          mask-image: radial-gradient(115% 105% at 72% 26%, #000, transparent 82%);
+}
+.nviz__orb { position: absolute; top: -1.8rem; right: -1.5rem; width: 7.5rem; height: 7.5rem; border-radius: 46% 54% 62% 38% / 52% 44% 56% 48%; background: var(--accent); opacity: .5; filter: blur(7px); animation: nvorb 17s var(--ease) infinite alternate; }
+
+.nvcard {
+  position: relative; z-index: 1; width: 100%; max-width: 24rem;
+  background: linear-gradient(158deg, #443c34 0%, #2f2720 52%, #221b15 100%);
+  border: 1.5px solid rgba(250, 247, 242, .22); border-radius: 15px;
+  box-shadow: 0 28px 52px -22px rgba(0, 0, 0, .85), inset 0 1px 0 rgba(250, 247, 242, .08);
+  padding: 1.05rem 1.15rem 1.15rem; color: var(--cream);
+}
+.nvcard--petrol { background: linear-gradient(168deg, #262d33 0%, #1c2227 60%, #171c20 100%); }
+.nvcard::before { content: ""; position: absolute; left: 1rem; right: 1rem; top: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--accent), transparent); opacity: .7; }
+.nvcap { font-family: var(--mono); font-size: .58rem; letter-spacing: .1em; text-transform: uppercase; color: rgba(250, 247, 242, .55); display: flex; align-items: center; gap: .42rem; margin-bottom: .8rem; }
+.nvcap::before { content: ""; width: .62rem; height: .62rem; border-radius: 3px; background: var(--accent); flex: none; animation: nvblink 2.8s ease-in-out infinite; }
+.nvrow { display: flex; align-items: center; gap: .5rem; margin-top: .5rem; font-size: .74rem; color: rgba(250, 247, 242, .85); }
+.nvrow--first, .nvcap + .nvrow { margin-top: 0; }
+.nvlabel { font-family: var(--mono); font-size: .52rem; letter-spacing: .04em; flex: none; padding: .2rem .44rem; border-radius: 100px; background: rgba(250, 247, 242, .13); color: rgba(250, 247, 242, .66); }
+.nvlabel--on { background: var(--accent); color: var(--ink); font-weight: 700; }
+.nvtick { width: .82rem; height: .82rem; border-radius: 5px; background: var(--accent); flex: none; }
+.nvtick--off { background: transparent; border: 1.5px dashed rgba(250, 247, 242, .42); }
+.nvsk { height: .5rem; border-radius: 100px; background: rgba(250, 247, 242, .2); flex: 1; }
+.nvtxt { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.nvmute { color: rgba(250, 247, 242, .5); }
+.nvbig { font-weight: 700; font-size: 1.75rem; letter-spacing: -.03em; line-height: 1; margin-bottom: .2rem; }
+.nvbig small { font-size: .62rem; font-weight: 500; color: rgba(250, 247, 242, .56); letter-spacing: 0; }
+.nvbub { border-radius: 11px 11px 11px 3px; padding: .46rem .62rem; font-size: .68rem; line-height: 1.36; max-width: 90%; }
+.nvbub--q { background: rgba(250, 247, 242, .14); color: rgba(250, 247, 242, .82); }
+.nvbub--a { background: color-mix(in oklab, var(--accent) 26%, #2f2720); border: 1.4px solid var(--accent); color: var(--cream); border-radius: 11px 11px 3px 11px; margin-left: auto; margin-top: .5rem; }
+.nvkey { font-family: var(--mono); font-weight: 700; font-size: .66rem; width: 1.5rem; height: 1.5rem; border-radius: 6px; flex: none; display: flex; align-items: center; justify-content: center; background: var(--accent); color: var(--ink); box-shadow: 0 3px 0 color-mix(in oklab, var(--accent) 55%, #000); }
+
+/* ---- Before/After-Reihen (Voice-Proof: generisch vs. in deiner Stimme) ---- */
+.hba { display: flex; flex-direction: column; gap: .55rem; }
+.hba__row { display: flex; align-items: center; gap: .55rem; }
+.hba__pill { font-family: var(--mono); font-size: .56rem; letter-spacing: .06em; padding: .2rem .5rem; border-radius: 100px; flex: none; text-transform: uppercase; }
+.hba__pill--off { background: rgba(250, 247, 242, .13); color: rgba(250, 247, 242, .62); }
+.hba__pill--on { background: var(--accent); color: var(--ink); }
+.hba__txt { font-size: .74rem; color: rgba(250, 247, 242, .82); }
+.hba__sk { height: .52rem; border-radius: 100px; background: rgba(250, 247, 242, .2); flex: 1; }
+
+/* ---- generische Liste mit Ticks ---- */
+.hlist { display: flex; flex-direction: column; gap: .55rem; }
+.hlist__row { display: flex; align-items: center; gap: .55rem; font-size: .74rem; color: rgba(250, 247, 242, .8); }
+.hlist__tick { width: .85rem; height: .85rem; border-radius: 5px; background: var(--accent); flex: none; }
+.hlist__sk { height: .58rem; border-radius: 100px; background: rgba(250, 247, 242, .2); flex: 1; }
+
+/* ---- Score-/Fortschrittsbalken ---- */
+.hscore { display: flex; flex-direction: column; gap: .5rem; }
+.hscore__row { display: flex; align-items: center; gap: .55rem; }
+.hscore__lbl { font-family: var(--mono); font-size: .56rem; color: rgba(250, 247, 242, .6); width: 3.4rem; flex: none; text-transform: uppercase; }
+.hscore__track { height: .42rem; border-radius: 100px; background: rgba(250, 247, 242, .16); flex: 1; overflow: hidden; }
+.hscore__track i { display: block; height: 100%; border-radius: 100px; background: var(--accent); }
+.hscore__pct { font-family: var(--mono); font-size: .56rem; color: rgba(250, 247, 242, .78); width: 1.9rem; flex: none; text-align: right; }
+
+/* ---- Sprach-Chips (Mehrsprachigkeit visualisieren) ---- */
+.hlang { display: flex; flex-wrap: wrap; gap: .4rem; }
+.hlang__chip { display: inline-flex; align-items: center; gap: .32rem; font-family: var(--mono); font-size: .58rem; letter-spacing: .03em; padding: .32rem .56rem; border-radius: 100px; border: 1.4px solid rgba(250, 247, 242, .2); color: rgba(250, 247, 242, .66); }
+.hlang__chip i { width: .42rem; height: .42rem; border-radius: 100px; background: rgba(250, 247, 242, .4); font-style: normal; }
+.hlang__chip--on { background: var(--accent); border-color: var(--accent); color: var(--ink); font-weight: 600; }
+.hlang__chip--on i { background: var(--ink); }
+
+/* ---- Briefing-Personen-Karte (Tagesplan) ---- */
+.hlbrief { width: 100%; max-width: 24rem; background: linear-gradient(158deg, #433b33, #221b15); color: var(--cream); border: 1.5px solid rgba(250, 247, 242, .2); border-radius: 14px; padding: 1.1rem 1.2rem; box-shadow: 0 44px 82px -34px rgba(0, 0, 0, .92); }
+.hlbrief__cap { font-family: var(--mono); font-size: .57rem; letter-spacing: .07em; text-transform: uppercase; color: var(--accent); margin-bottom: .85rem; }
+.hlbrief__person { display: flex; align-items: center; gap: .7rem; margin-bottom: .55rem; }
+.hlbrief__ava { width: 2.4rem; height: 2.4rem; border-radius: 100px; flex: none; font-family: var(--mono); display: flex; align-items: center; justify-content: center; background: var(--accent); color: var(--ink); font-weight: 700; font-size: .74rem; }
+.hlbrief__id { display: flex; flex-direction: column; }
+.hlbrief__id b { font-size: .92rem; }
+.hlbrief__id small { font-size: .65rem; color: rgba(250, 247, 242, .56); }
+.hlbrief__line { display: flex; align-items: center; gap: .6rem; margin-top: .5rem; }
+.hlbrief__lbl { font-family: var(--mono); font-size: .53rem; letter-spacing: .04em; text-transform: uppercase; color: rgba(250, 247, 242, .5); width: 3rem; flex: none; }
+.hlsk { height: .46rem; border-radius: 100px; background: rgba(250, 247, 242, .18); flex: 1; }
+
+/* ---- Tagesplan-Zeilen-Karte ---- */
+.hlday { width: 100%; max-width: 22rem; background: linear-gradient(168deg, #262d2a, #171c1a); color: var(--cream); border: 1.5px solid rgba(250, 247, 242, .2); border-radius: 12px; padding: .9rem 1rem; box-shadow: 0 32px 62px -26px rgba(0, 0, 0, .88); }
+.hlday__cap { font-family: var(--mono); font-size: .56rem; letter-spacing: .07em; text-transform: uppercase; color: rgba(250, 247, 242, .5); margin-bottom: .6rem; }
+.hlday__row { display: flex; align-items: center; gap: .5rem; padding: .32rem 0; font-size: .72rem; }
+.hlday__t { flex: 1; }
+.hlday__time { font-family: var(--mono); font-size: .6rem; color: var(--accent); width: 2.6rem; flex: none; }
+.hlday__ok { font-family: var(--mono); font-size: .53rem; letter-spacing: .03em; text-transform: uppercase; color: #5BBF7A; }
+
+/* ---- Mail-Karte ---- */
+.hlmail { width: 100%; max-width: 18rem; background: linear-gradient(158deg, #433b33, #221b15); color: var(--cream); border: 1.5px solid rgba(250, 247, 242, .2); border-radius: 12px; padding: .85rem .95rem; box-shadow: 0 32px 62px -26px rgba(0, 0, 0, .88); }
+.hlmail__cap { font-family: var(--mono); font-size: .55rem; letter-spacing: .07em; text-transform: uppercase; color: var(--accent); margin-bottom: .5rem; }
+.hlmail__subj { font-weight: 600; font-size: .8rem; margin-bottom: .6rem; }
+.hlmail__sk { display: block; height: .4rem; border-radius: 100px; background: rgba(250, 247, 242, .18); margin-bottom: .32rem; }
+
+/* ---- Big-Number-Block ---- */
+.htime { display: flex; flex-direction: column; align-items: flex-start; }
+.htime__h { font-weight: 700; font-size: 1.9rem; letter-spacing: -.03em; line-height: 1; }
+.htime__l { font-size: .74rem; color: rgba(250, 247, 242, .56); margin-top: .4rem; }
+.htime__l b { color: var(--accent); font-weight: 600; }
+
+/* ---- Animationen ---- */
+@keyframes nvorb { to { transform: translate(-15%, 17%) scale(1.2); } }
+@keyframes nvblink { 0%, 100% { opacity: 1; } 50% { opacity: .3; } }
+@keyframes nvwave { from { transform: scaleY(.32); } to { transform: scaleY(1); } }
+
+/* ---- Floating-Tilt-Wrapper (gekippte Karte mit Schatten, kein Chrome) ---- */
+.tilt { transform: rotate(-2.5deg); transition: transform .4s var(--ease); }
+.tilt:hover { transform: rotate(0deg); }
+.tilt--r { transform: rotate(2.5deg); }
+.tilt--r:hover { transform: rotate(0deg); }

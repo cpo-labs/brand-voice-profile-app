@@ -7,6 +7,9 @@ import { SiteFooter } from "@/app/_components/site-footer";
 import { CopyBlock } from "@/app/_components/copy-block";
 import { DownloadVoiceButton } from "@/app/_components/download-voice-button";
 
+// Per-Request-DB-Lookup nach Slug — nie statisch prerendern.
+export const dynamic = "force-dynamic";
+
 const CONTACT_EMAIL =
   process.env.CONTACT_EMAIL ?? "hello@appsales-consulting.de";
 
@@ -32,7 +35,8 @@ export default async function VoiceProfilePage({ params }: Props) {
   const p = rows[0];
   if (!p) notFound();
 
-  const created = new Date(p.createdAt as unknown as number);
+  // Drizzle `mode: "timestamp"` liefert bereits ein Date.
+  const created = p.createdAt as Date;
 
   return (
     <>
