@@ -2,42 +2,24 @@ interface Props {
   theme?: "ink" | "cream";
 }
 
-export function SiteHeader({ theme = "cream" }: Props) {
+export function SiteHeader({ theme = "ink" }: Props) {
   const isInk = theme === "ink";
   return (
-    <header
-      className="absolute top-0 left-0 right-0 z-50 flex items-center justify-between gut py-6"
-      style={{
-        color: isInk ? "var(--color-cream)" : "var(--color-ink)",
-      }}
-    >
+    <header className="nav">
       <a
+        className={`nav__brand ${isInk ? "nav__brand--ink" : ""}`}
         href="https://labs.appsales-consulting.de"
-        className="flex items-center gap-2 font-bold text-lg tracking-tight"
       >
-        <span>AppSales</span>
-        <span
-          style={{
-            color: isInk
-              ? "rgba(250,247,242,0.38)"
-              : "rgba(24,20,16,0.38)",
-            fontWeight: 300,
-            fontSize: "1.4rem",
-          }}
-        >
-          /
-        </span>
-        <span style={{ color: "var(--color-coral)" }}>Labs</span>
+        AppSales
+        <span className={isInk ? "nav__sep" : "nav__sep nav__sep--dark"}>/</span>
+        <span className="nav__labs">Labs</span>
       </a>
-      <nav className="flex items-center gap-6">
+      <nav className="flex items-center gap-5 sm:gap-7">
         <a
-          href="https://labs.appsales-consulting.de"
-          className="label-mono hover:text-[var(--color-coral)]"
-          style={{
-            color: isInk ? "rgba(250,247,242,0.72)" : "var(--color-soft)",
-          }}
+          className={`nav__link ${isInk ? "" : "nav__link--dark"}`}
+          href="https://labs.appsales-consulting.de/#tools"
         >
-          ← Alle Werkzeuge
+          Alle Werkzeuge
         </a>
       </nav>
     </header>

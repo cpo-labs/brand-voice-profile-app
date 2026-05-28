@@ -1,29 +1,16 @@
 export function SiteFooter() {
   return (
-    <footer
-      className="gut py-12 mt-12 border-t"
-      style={{ borderColor: "rgba(24,20,16,0.1)" }}
-    >
-      <div className="max-w-[1400px] mx-auto flex flex-wrap items-center justify-between gap-4">
-        <p className="font-bold tracking-tight">
-          AppSales{" "}
-          <span style={{ color: "var(--color-coral)" }}>Labs</span>
+    <footer className="footer">
+      <div className="footer__row">
+        <p className="footer__brand">
+          AppSales <span>Labs</span>
         </p>
-        <p
-          className="label-mono"
-          style={{ color: "var(--color-soft)" }}
-        >
-          <a
-            href="https://labs.appsales-consulting.de/impressum.html"
-            className="hover:text-[var(--color-coral)]"
-          >
+        <p className="footer__meta">
+          <a href="https://labs.appsales-consulting.de/impressum.html">
             Impressum
           </a>
           {" · "}
-          <a
-            href="https://labs.appsales-consulting.de/datenschutz.html"
-            className="hover:text-[var(--color-coral)]"
-          >
+          <a href="https://labs.appsales-consulting.de/datenschutz.html">
             Datenschutz
           </a>
           {" · "}
