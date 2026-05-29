@@ -61,7 +61,9 @@ WICHTIG:
 - voiceMd soll konkret und nachprüfbar sein, nicht generisch
 - Belege Beobachtungen mit Zitaten aus den Quelltexten
 - proofBefore sollte typische AI-Schreibe enthalten, damit der Unterschied sichtbar wird
-- proofAfter muss überzeugend in der Stimme klingen, sonst hat das Tool keinen Wert`;
+- proofAfter muss überzeugend in der Stimme klingen, sonst hat das Tool keinen Wert
+- HALTE DICH KOMPAKT: Qualität über Länge. voiceMd max ~450 Wörter, jede Drop-in-Version
+  innerhalb ihres Limits, proof kurz. Keine Füll-Sätze — das Tool muss schnell liefern.`;
 
 export async function extractVoice({
   texts,
@@ -93,7 +95,9 @@ export async function extractVoice({
     response = await getAnthropic().messages.create(
       {
         model: VOICE_MODEL,
-        max_tokens: 8000,
+        // 4500 statt 8000: ein kompaktes, vollständiges Profil passt locker rein
+        // und bleibt sicher unter dem 55s/60s-Budget (Generierungszeit ∝ Output).
+        max_tokens: 4500,
         // System-Prompt cachen (statisch) — spart Kosten bei wiederholten Läufen.
         system: [{ type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }],
         messages: [
