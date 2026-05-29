@@ -27,47 +27,77 @@ Was DU NICHT tust:
 - Keine generischen Tone-of-Voice-Floskeln ("authentisch", "empathisch", "auf Augenhöhe")
 - Keine Em-Dashes (—) inflationär verwenden (nur wenn die Person sie selbst nutzt)
 - Keine AI-Slop-Phrasen ("Let's dive in", "Absolutely", "I'd be happy to")
-- Keine Aufzählungen, die "Klarheit & Präzision & Authentizität" wiederholen
 
-Du schreibst auf Deutsch, weil die Quelltexte typischerweise deutsch sind. Falls Quelltexte
-englisch sind, wechselst du.`;
+HALTE DICH KOMPAKT: Qualität über Länge. Das voiceMd max ~450 Wörter, jede Drop-in-Version
+innerhalb ihres Limits, der Proof kurz. Keine Füll-Sätze — das Tool muss schnell liefern.
 
-const USER_PROMPT = (
-  texts: { filename: string; content: string }[]
-) => `Hier sind ${texts.length} Texte einer Person. Analysiere sie und gib das Voice-Profil zurück.
+Du schreibst auf Deutsch, weil die Quelltexte typischerweise deutsch sind. Falls die
+Quelltexte englisch sind, wechselst du.`;
+
+const userPrompt = (texts: { filename: string; content: string }[]) =>
+  `Hier sind ${texts.length} Texte einer Person. Analysiere sie und gib das Voice-Profil über das Tool \`emit_voice_profile\` zurück.
 
 ${texts
-  .map(
-    (t, i) =>
-      `─── Text ${i + 1}: ${t.filename} ─────────────────────\n${t.content}\n`
-  )
-  .join("\n")}
+    .map((t, i) => `─── Text ${i + 1}: ${t.filename} ─────────────────────\n${t.content}\n`)
+    .join("\n")}
 
 ─── Ende der Quellen ─────────────────────
 
-Gib deine Antwort als JSON-Objekt im folgenden Format zurück (ohne Markdown-Codeblock-Wrapper):
+Wichtig: voiceMd konkret und nachprüfbar (mit Zitaten aus den Quellen), nicht generisch.
+proofBefore soll typische AI-Schreibe enthalten, proofAfter überzeugend in der echten Stimme.`;
 
-{
-  "voiceMd": "<vollständiges VOICE.md im Markdown-Format. Sektionen: Kern-Identität, Satzbau & Rhythmus, Wortwahl & Vokabular, Was diese Stimme NIE tut, Beispiele aus den Quellen, Drop-in-Anleitung für LLMs.>",
-  "dropInChatgpt": "<Kurzform für ChatGPT Custom Instructions, max 1500 Zeichen, beginnt mit 'Schreibe in folgender Stimme:'>",
-  "dropInClaude": "<Kurzform für Claude Project / Style, max 2000 Zeichen, beginnt mit '# Voice Guide'>",
-  "dropInGemini": "<Kurzform für Gemini Gem System Instructions, max 1500 Zeichen, beginnt mit 'Voice guide:'>",
-  "proofPrompt": "<Ein konkreter Beispiel-Prompt zum Demonstrieren, z.B. 'Schreibe eine kurze LinkedIn-Notiz über das erste Quartal'>",
-  "proofBefore": "<Wie ein generisches LLM diesen Prompt beantworten würde — bewusst stock, mit typischen AI-Slop-Markern>",
-  "proofAfter": "<Wie das LLM mit deinem Voice-Profil antworten würde — in der echten Stimme dieser Person>"
-}
+// Strukturierte Ausgabe per Tool-Use: das Modell MUSS dieses Tool aufrufen, das
+// SDK liefert dann ein validiertes Objekt — kein fragiles JSON.parse auf
+// mehrzeiligem Markdown mehr.
+const VOICE_TOOL = {
+  name: "emit_voice_profile",
+  description: "Gibt das fertige Voice-Profil strukturiert zurück.",
+  input_schema: {
+    type: "object" as const,
+    properties: {
+      voiceMd: {
+        type: "string",
+        description:
+          "Vollständiges VOICE.md im Markdown-Format, ~450 Wörter. Sektionen: Kern-Identität, Satzbau & Rhythmus, Wortwahl & Vokabular, Was diese Stimme NIE tut, Beispiele aus den Quellen, Drop-in-Anleitung für LLMs.",
+      },
+      dropInChatgpt: {
+        type: "string",
+        description: "Kurzform für ChatGPT Custom Instructions, max 1500 Zeichen, beginnt mit 'Schreibe in folgender Stimme:'",
+      },
+      dropInClaude: {
+        type: "string",
+        description: "Kurzform für Claude Project/Style, max 2000 Zeichen, beginnt mit '# Voice Guide'",
+      },
+      dropInGemini: {
+        type: "string",
+        description: "Kurzform für Gemini Gem System Instructions, max 1500 Zeichen, beginnt mit 'Voice guide:'",
+      },
+      proofPrompt: {
+        type: "string",
+        description: "Ein konkreter Beispiel-Prompt, z.B. 'Schreibe eine kurze LinkedIn-Notiz über das erste Quartal'",
+      },
+      proofBefore: {
+        type: "string",
+        description: "Wie ein generisches LLM diesen Prompt beantworten würde — bewusst stock, mit typischen AI-Slop-Markern",
+      },
+      proofAfter: {
+        type: "string",
+        description: "Wie das LLM mit diesem Voice-Profil antworten würde — in der echten Stimme der Person",
+      },
+    },
+    required: [
+      "voiceMd",
+      "dropInChatgpt",
+      "dropInClaude",
+      "dropInGemini",
+      "proofPrompt",
+      "proofBefore",
+      "proofAfter",
+    ],
+  },
+};
 
-WICHTIG:
-- voiceMd soll konkret und nachprüfbar sein, nicht generisch
-- Belege Beobachtungen mit Zitaten aus den Quelltexten
-- proofBefore sollte typische AI-Schreibe enthalten, damit der Unterschied sichtbar wird
-- proofAfter muss überzeugend in der Stimme klingen, sonst hat das Tool keinen Wert
-- HALTE DICH KOMPAKT: Qualität über Länge. voiceMd max ~450 Wörter, jede Drop-in-Version
-  innerhalb ihres Limits, proof kurz. Keine Füll-Sätze — das Tool muss schnell liefern.`;
-
-export async function extractVoice({
-  texts,
-}: ExtractArgs): Promise<VoiceExtractionResult> {
+export async function extractVoice({ texts }: ExtractArgs): Promise<VoiceExtractionResult> {
   if (texts.length === 0) {
     throw new Error("Keine Texte zum Analysieren übergeben.");
   }
@@ -84,9 +114,8 @@ export async function extractVoice({
     );
   }
 
-  // Vercel killt die Funktion bei maxDuration (60s). Wir brechen bei 55s
-  // selbst ab, damit der Nutzer eine saubere Fehlermeldung bekommt statt eines
-  // opaken Function-Timeouts.
+  // 55s Selbst-Abbruch, damit der Nutzer vor dem Vercel-60s-Kill eine saubere
+  // Meldung bekommt statt eines opaken Function-Timeouts.
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 55_000);
 
@@ -95,17 +124,11 @@ export async function extractVoice({
     response = await getAnthropic().messages.create(
       {
         model: VOICE_MODEL,
-        // 4500 statt 8000: ein kompaktes, vollständiges Profil passt locker rein
-        // und bleibt sicher unter dem 55s/60s-Budget (Generierungszeit ∝ Output).
         max_tokens: 4500,
-        // System-Prompt cachen (statisch) — spart Kosten bei wiederholten Läufen.
         system: [{ type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }],
-        messages: [
-          {
-            role: "user",
-            content: USER_PROMPT(texts),
-          },
-        ],
+        tools: [VOICE_TOOL],
+        tool_choice: { type: "tool", name: "emit_voice_profile" },
+        messages: [{ role: "user", content: userPrompt(texts) }],
       },
       { signal: controller.signal }
     );
@@ -120,30 +143,12 @@ export async function extractVoice({
     clearTimeout(timeout);
   }
 
-  const textBlock = response.content.find((b) => b.type === "text");
-  if (!textBlock || textBlock.type !== "text") {
-    throw new Error("Keine Antwort vom Modell erhalten.");
+  const toolBlock = response.content.find((b) => b.type === "tool_use");
+  if (!toolBlock || toolBlock.type !== "tool_use") {
+    throw new Error("Keine strukturierte Antwort vom Modell erhalten.");
   }
 
-  // Allow accidental codeblock wrapping
-  const raw = textBlock.text.trim();
-  const cleaned = raw
-    .replace(/^```json\s*/i, "")
-    .replace(/^```\s*/, "")
-    .replace(/```\s*$/, "")
-    .trim();
-
-  let parsed: VoiceExtractionResult;
-  try {
-    parsed = JSON.parse(cleaned) as VoiceExtractionResult;
-  } catch (err) {
-    throw new Error(
-      `Konnte die Modell-Antwort nicht als JSON parsen. ${
-        err instanceof Error ? err.message : String(err)
-      }`
-    );
-  }
-
+  const parsed = toolBlock.input as Partial<VoiceExtractionResult>;
   const required: (keyof VoiceExtractionResult)[] = [
     "voiceMd",
     "dropInChatgpt",
@@ -160,5 +165,5 @@ export async function extractVoice({
     }
   }
 
-  return parsed;
+  return parsed as VoiceExtractionResult;
 }
