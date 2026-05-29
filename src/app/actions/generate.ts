@@ -2,13 +2,9 @@
 
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { db } from "@/lib/db";
-import { profile } from "@/lib/db/schema";
-import { extractTextFromFiles, countWords } from "@/lib/text-extraction";
-import { extractVoice } from "@/lib/voice-extraction";
-import { attachProfileToRun, checkLimit, recordRun } from "@/lib/rate-limit";
-import { generateSlug } from "@/lib/slug";
-import { sendProfileReady } from "@/lib/email";
+import { extractTextFromFiles } from "@/lib/text-extraction";
+import { generateProfileFromTexts } from "@/lib/generate-profile";
+import { checkLimit } from "@/lib/rate-limit";
 import { t, type Locale } from "@/lib/i18n";
 
 const EmailSchema = z.string().email().max(254);
@@ -47,51 +43,18 @@ export async function generateProfile(
     return { error: e.noFiles };
   }
 
+  // Frühe, lokalisierte Limit-Meldung bevor wir Dateien extrahieren. Die
+  // autoritative Prüfung (inkl. Slot-Reservierung) passiert in
+  // generateProfileFromTexts.
   const limit = await checkLimit(email);
   if (!limit.allowed) {
     return { error: e.limitFallback };
   }
 
-  // Reserve the slot before the expensive Anthropic call so parallel
-  // requests with the same email see the run during their own checkLimit.
-  // Window from ~30s (LLM) down to a single DB round-trip.
-  const runId = await recordRun({ email });
-
   let slug: string;
   try {
     const texts = await extractTextFromFiles(files);
-    const wordCount = countWords(texts);
-
-    const result = await extractVoice({ texts });
-
-    slug = generateSlug(8);
-    const id = crypto.randomUUID();
-
-    await db.insert(profile).values({
-      id,
-      slug,
-      email,
-      voiceMd: result.voiceMd,
-      dropInChatgpt: result.dropInChatgpt,
-      dropInClaude: result.dropInClaude,
-      dropInGemini: result.dropInGemini,
-      proofPrompt: result.proofPrompt,
-      proofBefore: result.proofBefore,
-      proofAfter: result.proofAfter,
-      sourceFileCount: texts.length,
-      sourceWordCount: wordCount,
-    });
-
-    await attachProfileToRun(runId, id);
-
-    // Mail nur, wenn der Nutzer freiwillig eine E-Mail angegeben hat.
-    if (email) {
-      const baseUrl = process.env.PUBLIC_BASE_URL ?? "http://localhost:3000";
-      await sendProfileReady({
-        email,
-        permalink: `${baseUrl}/voice/${slug}`,
-      });
-    }
+    ({ slug } = await generateProfileFromTexts({ email, texts }));
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     return { error: msg };
