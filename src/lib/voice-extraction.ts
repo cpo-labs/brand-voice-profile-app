@@ -149,7 +149,7 @@ export async function extractVoice({ texts }: ExtractArgs): Promise<VoiceExtract
         system: [{ type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }],
         tools: [VOICE_TOOL],
         tool_choice: { type: "tool", name: "emit_voice_profile" },
-        messages: [{ role: "user", content: userPrompt(texts) }],
+        messages: [{ role: "user", content: userPrompt(analysisTexts) }],
       },
       { signal: controller.signal }
     );

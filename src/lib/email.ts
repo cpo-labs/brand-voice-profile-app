@@ -3,7 +3,7 @@ import { Resend } from "resend";
 const apiKey = process.env.RESEND_API_KEY;
 const fromAddress =
   process.env.RESEND_FROM ||
-  "Brand Voice Profile <hello@labs.appsales-consulting.de>";
+  "Brand Voice Profile <info@appsales-consulting.de>";
 
 const resend = apiKey ? new Resend(apiKey) : null;
 const contactAddress = process.env.CONTACT_EMAIL || "info@appsales-consulting.de";

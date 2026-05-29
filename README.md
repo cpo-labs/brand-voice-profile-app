@@ -79,7 +79,7 @@ npm run dev        # http://localhost:3000
 | `DATABASE_URL`                 | ja      | `file:./data/dev.db` lokal, `libsql://...` für Turso in Production |
 | `DATABASE_AUTH_TOKEN`          | nur Turso | Auth-Token für Hosted-Turso                                      |
 | `RESEND_API_KEY`               | nein    | Wenn gesetzt, schickt Permalink per Mail. Sonst Console-Log.       |
-| `RESEND_FROM`                  | nein    | Absender-Adresse (Default: `hello@labs.appsales-consulting.de`)    |
+| `RESEND_FROM`                  | nein    | Absender-Adresse (Default: `info@appsales-consulting.de`)    |
 | `PUBLIC_BASE_URL`              | nein    | URL für Permalinks in E-Mails (Default: `http://localhost:3000`)   |
 | `PROFILE_LIMIT_PER_EMAIL`      | nein    | Default `1`                                                        |
 | `PROFILE_LIMIT_GLOBAL_MONTHLY` | nein    | Default `100`                                                      |

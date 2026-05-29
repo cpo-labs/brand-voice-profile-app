@@ -8,14 +8,14 @@ export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale();
   const de = locale === "de";
   return {
-    title: "Brand Voice Profile · AppSales Labs",
+    title: "Brand Voice Profile",
     description: de
       ? "Gib uns ein paar echte Texte und bekomme ein VOICE.md, das jedem LLM hilft, in deiner Stimme zu schreiben. Kostenloses Tool von AppSales Labs."
       : "Give us a few real texts and get a VOICE.md that helps any LLM write in your voice. Free tool by AppSales Labs.",
     metadataBase: new URL("https://voice.labs.appsales-consulting.de"),
     robots: { index: true, follow: true },
     openGraph: {
-      title: "Brand Voice Profile · AppSales Labs",
+      title: "Brand Voice Profile",
       description: de
         ? "Ein Profil aus deinen Texten, damit KI dich nicht mehr verwässert."
         : "A profile from your texts, so AI stops watering you down.",
