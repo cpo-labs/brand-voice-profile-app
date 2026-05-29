@@ -15,9 +15,8 @@ export function SiteHeader({ theme = "ink", locale }: Props) {
 
   return (
     <header className={`nav ${dark ? "nav--dark" : ""}`}>
-      <a className="nav__brand" href={base}>
-        AppSales <span className="nav__sep">/</span>{" "}
-        <span className="nav__labs">Labs</span>
+      <a className="nav__brand" href="/">
+        Brand Voice <span className="nav__labs">Profile</span>
       </a>
       <nav className="nav__links">
         <a href={`${base}/#tools`}>{d.nav.back}</a>

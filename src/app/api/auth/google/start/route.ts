@@ -41,7 +41,7 @@ export function GET(req: NextRequest) {
   );
 }
 
-const CONTACT_EMAIL = process.env.CONTACT_EMAIL ?? "hello@appsales-consulting.de";
+const CONTACT_EMAIL = process.env.CONTACT_EMAIL ?? "info@appsales-consulting.de";
 
 function setupPendingHtml(email: string): string {
   const safeEmail = email.replace(/[<>"]/g, "");

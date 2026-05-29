@@ -97,6 +97,31 @@ const VOICE_TOOL = {
   },
 };
 
+// Fuer ein Voice-Profil reicht eine repraesentative Stichprobe, nicht der
+// komplette Korpus. Grosse Uploads werden daher NICHT abgelehnt, sondern auf ein
+// festes Zeichen-Budget heruntergesampelt — so scheitert nichts am Limit und die
+// Analyse bleibt schnell (kein 55s-Timeout). Pro Datei ein Kopf+Ende-Auszug,
+// damit Einstieg und typischer Verlauf der Stimme erhalten bleiben.
+const SAMPLE_CHAR_BUDGET = 48_000;
+
+function sampleForAnalysis(
+  texts: { filename: string; content: string }[]
+): { filename: string; content: string }[] {
+  const total = texts.reduce((sum, t) => sum + t.content.length, 0);
+  if (total <= SAMPLE_CHAR_BUDGET) return texts;
+  return texts.map((t) => {
+    const budget = Math.max(1200, Math.floor((SAMPLE_CHAR_BUDGET * t.content.length) / total));
+    if (t.content.length <= budget) return t;
+    const head = Math.ceil(budget * 0.62);
+    const tail = budget - head;
+    const content =
+      t.content.slice(0, head).trimEnd() +
+      "\n\n[… für die Analyse gekürzt …]\n\n" +
+      t.content.slice(t.content.length - tail).trimStart();
+    return { filename: t.filename, content };
+  });
+}
+
 export async function extractVoice({ texts }: ExtractArgs): Promise<VoiceExtractionResult> {
   if (texts.length === 0) {
     throw new Error("Keine Texte zum Analysieren übergeben.");
@@ -108,11 +133,7 @@ export async function extractVoice({ texts }: ExtractArgs): Promise<VoiceExtract
       "Zu wenig Textmaterial. Lade mindestens ~500 Zeichen / einen ordentlichen Absatz hoch."
     );
   }
-  if (totalChars > 200_000) {
-    throw new Error(
-      "Zu viel Textmaterial auf einmal. Reduziere auf max. ~200.000 Zeichen oder lade kürzere Auszüge hoch."
-    );
-  }
+  const analysisTexts = sampleForAnalysis(texts);
 
   // 55s Selbst-Abbruch, damit der Nutzer vor dem Vercel-60s-Kill eine saubere
   // Meldung bekommt statt eines opaken Function-Timeouts.

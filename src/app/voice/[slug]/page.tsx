@@ -12,7 +12,7 @@ import { t } from "@/lib/i18n";
 // Per-Request-DB-Lookup nach Slug — nie statisch prerendern.
 export const dynamic = "force-dynamic";
 
-const CONTACT_EMAIL = process.env.CONTACT_EMAIL ?? "hello@appsales-consulting.de";
+const CONTACT_EMAIL = process.env.CONTACT_EMAIL ?? "info@appsales-consulting.de";
 
 interface Props {
   params: Promise<{ slug: string }>;

@@ -6,7 +6,7 @@ const fromAddress =
   "Brand Voice Profile <hello@labs.appsales-consulting.de>";
 
 const resend = apiKey ? new Resend(apiKey) : null;
-const contactAddress = process.env.CONTACT_EMAIL || "hello@appsales-consulting.de";
+const contactAddress = process.env.CONTACT_EMAIL || "info@appsales-consulting.de";
 
 /**
  * Benachrichtigt das Lab-Team über eine neue Gmail-Connect-Zugangsanfrage.

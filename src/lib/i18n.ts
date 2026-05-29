@@ -58,11 +58,11 @@ type Dict = {
 const de: Dict = {
   nav: { tagline: "Werkzeug", back: "Zurück zu Labs" },
   hero: {
-    tag: "Brand Voice · AppSales Labs",
-    title: "Woher kommen ",
-    titleEm: "deine Texte",
+    tag: "Brand Voice Profile",
+    title: "Klingen deine Texte noch nach ",
+    titleEm: "dir",
     titleAfter: "?",
-    sub: "Gib uns ein paar echte Texte von dir — und du bekommst ein VOICE.md, das jedem LLM beibringt, in deiner Stimme zu schreiben statt wie ein LinkedIn-Influencer. Wähl unten, woher die Texte kommen.",
+    sub: "Gib uns ein paar echte Texte von dir, und du bekommst ein VOICE.md, das jeder KI beibringt, in deiner Stimme zu schreiben statt wie ein LinkedIn-Influencer.",
   },
   sources: {
     eyebrow: "Drei Wege rein",
@@ -165,11 +165,11 @@ const de: Dict = {
 const en: Dict = {
   nav: { tagline: "Tool", back: "Back to Labs" },
   hero: {
-    tag: "Brand Voice · AppSales Labs",
-    title: "Where does ",
-    titleEm: "your writing",
-    titleAfter: " come from?",
-    sub: "Give us a few real texts of yours — and get a VOICE.md that teaches any LLM to write in your voice instead of like a LinkedIn influencer. Pick where your texts come from below.",
+    tag: "Brand Voice Profile",
+    title: "Does your writing still sound like ",
+    titleEm: "you",
+    titleAfter: "?",
+    sub: "Give us a few real texts of yours, and get a VOICE.md that teaches any AI to write in your voice instead of like a LinkedIn influencer.",
   },
   sources: {
     eyebrow: "Three ways in",
