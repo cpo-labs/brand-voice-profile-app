@@ -72,11 +72,11 @@ export async function sendProfileReady({
     await resend.emails.send({
       from: fromAddress,
       to: email,
-      subject: "Dein Brand Voice Profile ist fertig",
+      subject: "Dein Stimmprofil ist fertig",
       text: [
         "Hi,",
         "",
-        "Dein VOICE.md ist generiert. Du findest es hier:",
+        "Dein Stimmprofil ist fertig. Du findest es hier:",
         permalink,
         "",
         "Speicher den Link, du kannst ihn jederzeit wieder aufrufen.",
@@ -95,9 +95,9 @@ function profileHtml(permalink: string): string {
   return `<!DOCTYPE html>
 <html><body style="font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;background:#FAF7F2;color:#181410;padding:32px;line-height:1.55">
   <div style="max-width:520px;margin:0 auto">
-    <p style="font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.08em;text-transform:uppercase;color:#5C544B;margin-bottom:24px">AppSales Labs / Brand Voice Profile</p>
-    <h1 style="font-size:24px;font-weight:700;letter-spacing:-0.01em;margin-bottom:16px">Dein VOICE.md ist fertig</h1>
-    <p style="margin-bottom:24px">Du findest dein Profil hier. Speicher den Link &mdash; du kannst es jederzeit wieder aufrufen.</p>
+    <p style="font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.08em;text-transform:uppercase;color:#5C544B;margin-bottom:24px">AppSales Labs / Stimmprofil</p>
+    <h1 style="font-size:24px;font-weight:700;letter-spacing:-0.01em;margin-bottom:16px">Dein Stimmprofil ist fertig</h1>
+    <p style="margin-bottom:24px">Du findest dein Profil hier. Speicher den Link, du kannst es jederzeit wieder aufrufen.</p>
     <p style="margin-bottom:32px">
       <a href="${permalink}" style="display:inline-block;background:#181410;color:#FAF7F2;padding:14px 28px;border-radius:100px;font-weight:600;text-decoration:none">Profil &ouml;ffnen &rarr;</a>
     </p>
