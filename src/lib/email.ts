@@ -60,11 +60,14 @@ export async function sendProfileReady({
   permalink,
 }: PermalinkArgs): Promise<void> {
   if (!resend) {
-    console.log(
-      "\n[Brand Voice Profile] Profile-Ready Mail (RESEND_API_KEY not set, logging instead):"
-    );
-    console.log(`  To:    ${email}`);
-    console.log(`  Link:  ${permalink}\n`);
+    // Dev-only Fallback; email ist user-PII und gehoert nicht in Prod-Logs.
+    if (process.env.NODE_ENV === "development") {
+      console.log(
+        "\n[Brand Voice Profile] Profile-Ready Mail (RESEND_API_KEY not set, logging instead):"
+      );
+      console.log(`  To:    ${email}`);
+      console.log(`  Link:  ${permalink}\n`);
+    }
     return;
   }
 

@@ -44,3 +44,8 @@ drizzle/
 # TypeScript
 *.tsbuildinfo
 next-env.d.ts
+data/
+*.db-wal
+*.db-shm
+test-results/
+tsconfig.tsbuildinfo

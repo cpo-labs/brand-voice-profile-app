@@ -141,3 +141,46 @@
 .tilt:hover { transform: rotate(0deg); }
 .tilt--r { transform: rotate(2.5deg); }
 .tilt--r:hover { transform: rotate(0deg); }
+
+/* ============================================================================
+   Skalen-Meter (helles Profil auf cream): "diplomatisch <-> sehr direkt"
+   mit Position des Nutzers. Auf var(--accent) gethemt, ohne Stock.
+   ============================================================================ */
+.vmeter { display: flex; flex-direction: column; gap: 1.35rem; }
+.vmeter__item { display: flex; flex-direction: column; gap: .5rem; }
+.vmeter__head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; }
+.vmeter__label { font-weight: 700; font-size: 1.02rem; letter-spacing: -.01em; color: var(--ink); }
+.vmeter__poles { display: flex; align-items: center; justify-content: space-between; font-family: var(--mono); font-size: .64rem; letter-spacing: .02em; text-transform: lowercase; color: var(--soft); }
+.vmeter__pole--hi { text-align: right; }
+.vmeter__track {
+  position: relative; height: .62rem; border-radius: 100px;
+  background: rgba(24, 20, 16, .1);
+}
+.vmeter__dots { position: absolute; inset: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 .4rem; }
+.vmeter__dot { width: .3rem; height: .3rem; border-radius: 100px; background: rgba(24, 20, 16, .18); }
+/* gefuellter Balken bis zur Position */
+.vmeter__fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 100px; background: var(--accent); }
+/* Knopf an der Position */
+.vmeter__knob {
+  position: absolute; top: 50%; width: 1.05rem; height: 1.05rem; border-radius: 100px;
+  transform: translate(-50%, -50%); background: var(--ink);
+  border: 3px solid var(--accent);
+  box-shadow: 0 4px 10px -2px rgba(24, 20, 16, .45);
+}
+.vmeter__ev { font-size: .82rem; line-height: 1.45; color: var(--soft); }
+
+/* ---- Beleg-Zitat-Karte ("Das sagst du wirklich") ---- */
+.vquote {
+  border-left: 3px solid var(--accent); border-radius: 0 14px 14px 0;
+  padding: .9rem 1.1rem; background: var(--cream-2);
+}
+.vquote__text { font-size: 1.02rem; line-height: 1.5; color: var(--ink); }
+.vquote__meta { margin-top: .55rem; font-family: var(--mono); font-size: .64rem; letter-spacing: .02em; color: var(--soft); }
+.vquote__meta b { color: var(--accent); font-weight: 600; }
+
+/* ---- Lexikon-Chips (nutzt / nie) ---- */
+.vchips { display: flex; flex-wrap: wrap; gap: .5rem; }
+.vchip { display: inline-flex; align-items: center; gap: .4rem; font-size: .82rem; padding: .38rem .7rem; border-radius: 100px; border: 1.5px solid rgba(24, 20, 16, .14); color: var(--ink); background: #fff; }
+.vchip--uses { border-color: color-mix(in oklab, var(--accent) 55%, transparent); }
+.vchip--uses::before { content: ""; width: .42rem; height: .42rem; border-radius: 100px; background: var(--accent); flex: none; }
+.vchip--never { color: var(--soft); text-decoration: line-through; text-decoration-color: rgba(24, 20, 16, .3); background: transparent; }

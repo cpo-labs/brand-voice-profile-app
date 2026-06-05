@@ -7,7 +7,7 @@ import { t, type Locale } from "@/lib/i18n";
 
 const ACCEPT = ".txt,.md,.markdown,.pdf,.docx";
 const MAX_FILES = 20;
-const MAX_FILE_SIZE = 5 * 1024 * 1024;
+const MAX_FILE_SIZE = 15 * 1024 * 1024;
 
 export function DropCard({ locale }: { locale: Locale }) {
   const d = t(locale).sources.drop;

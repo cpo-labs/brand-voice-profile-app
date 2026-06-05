@@ -31,14 +31,19 @@ export default async function HomePage() {
                 {d.hero.titleAfter}
               </h1>
               <p className="pagehero__sub">{d.hero.sub}</p>
-              <a href="#sources" className="pill pill--accent pill--arrow mt-8">
-                {d.sources.titleEm.toUpperCase()}
-              </a>
+              <div className="flex flex-wrap items-center gap-3 mt-8">
+                <a href="#sources" className="pill pill--accent pill--arrow">
+                  {d.sources.titleEm.toUpperCase()}
+                </a>
+                <a href="/beispiel" className="pill pill--ghost">
+                  {d.hero.demoCta}
+                </a>
+              </div>
             </div>
 
-            {/* VOICE.md-Artefakt — handgebaut, kein Stock */}
+            {/* Stimmprofil-Artefakt — handgebaut, kein Stock */}
             <div className="relative hidden md:block">
-              <p className="hfile">VOICE.md</p>
+              <p className="hfile">{locale === "de" ? "Stimmprofil" : "Voice profile"}</p>
               <div className="nvcard tilt">
                 <div className="nvcap">Voice Profile</div>
                 <div className="nvrow nvrow--first">

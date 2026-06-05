@@ -5,6 +5,7 @@ import { extractVoice } from "@/lib/voice-extraction";
 import { attachProfileToRun, checkLimit, recordRun } from "@/lib/rate-limit";
 import { generateSlug } from "@/lib/slug";
 import { sendProfileReady } from "@/lib/email";
+import { hashEmail } from "@/lib/email-hash";
 
 export interface GenerateProfileArgs {
   /** Sender/owner email. May be null for the input-free drop flow. */
@@ -56,17 +57,24 @@ export async function generateProfileFromTexts({
   const slug = generateSlug(8);
   const id = crypto.randomUUID();
 
+  // Strukturierte Felder fuer das lesbare Browser-Profil getrennt vom
+  // serverseitig gebauten voiceMd persistieren.
+  const { voiceMd, dropInChatgpt, dropInClaude, dropInGemini, ...structured } = result;
+
   await db.insert(profile).values({
     id,
     slug,
-    email: normalizedEmail,
-    voiceMd: result.voiceMd,
-    dropInChatgpt: result.dropInChatgpt,
-    dropInClaude: result.dropInClaude,
-    dropInGemini: result.dropInGemini,
-    proofPrompt: result.proofPrompt,
-    proofBefore: result.proofBefore,
-    proofAfter: result.proofAfter,
+    // Nur der Hash wird persistiert. normalizedEmail bleibt rein transient
+    // (lokale Variable) und wird unten einmalig fuer den Mail-Versand genutzt.
+    emailHash: hashEmail(normalizedEmail),
+    voiceMd,
+    profileJson: JSON.stringify(structured),
+    dropInChatgpt,
+    dropInClaude,
+    dropInGemini,
+    proofPrompt: structured.proofPrompt,
+    proofBefore: structured.proofBefore,
+    proofAfter: structured.proofAfter,
     sourceFileCount: texts.length,
     sourceWordCount: wordCount,
   });

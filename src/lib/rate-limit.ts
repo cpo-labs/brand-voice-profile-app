@@ -1,6 +1,7 @@
 import { eq, sql } from "drizzle-orm";
 import { db } from "./db";
 import { profileRun } from "./db/schema";
+import { hashEmail } from "./email-hash";
 
 export interface LimitCheck {
   allowed: boolean;
@@ -30,11 +31,13 @@ export async function checkLimit(email?: string | null): Promise<LimitCheck> {
     .where(eq(profileRun.monthKey, monthKey));
   const totalThisMonth = globalCount[0]?.count ?? 0;
 
-  if (email) {
+  // Per-E-Mail-Limit ueber den Hash — Klartext landet nie in der Query.
+  const emailHash = hashEmail(email);
+  if (emailHash) {
     const byEmail = await db
       .select({ count: sql<number>`count(*)` })
       .from(profileRun)
-      .where(eq(profileRun.email, email.toLowerCase()));
+      .where(eq(profileRun.emailHash, emailHash));
     const emailCount = byEmail[0]?.count ?? 0;
     if (emailCount >= PER_EMAIL) {
       return { allowed: false, reason: "per-email", remaining: 0 };
@@ -58,7 +61,7 @@ export async function recordRun({
   const id = crypto.randomUUID();
   await db.insert(profileRun).values({
     id,
-    email: email ? email.toLowerCase() : null,
+    emailHash: hashEmail(email),
     profileId,
     monthKey: currentMonthKey(),
   });

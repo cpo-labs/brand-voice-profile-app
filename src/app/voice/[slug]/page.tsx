@@ -4,10 +4,10 @@ import { db } from "@/lib/db";
 import { profile } from "@/lib/db/schema";
 import { SiteHeader } from "@/app/_components/site-header";
 import { SiteFooter } from "@/app/_components/site-footer";
-import { CopyBlock } from "@/app/_components/copy-block";
-import { DownloadVoiceButton } from "@/app/_components/download-voice-button";
+import { ProfileView } from "@/app/_components/profile-view";
 import { getLocale } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
+import type { VoiceProfile } from "@/lib/voice-extraction";
 
 // Per-Request-DB-Lookup nach Slug — nie statisch prerendern.
 export const dynamic = "force-dynamic";
@@ -21,8 +21,29 @@ interface Props {
 export async function generateMetadata({ params }: Props) {
   const { slug } = await params;
   return {
-    title: `Voice Profile · ${slug} · AppSales Labs`,
+    title: `Stimmprofil · ${slug} · AppSales Labs`,
     robots: { index: false, follow: false },
+  };
+}
+
+// Aelteres Profil ohne strukturiertes JSON: minimal aus den Spalten
+// rekonstruieren, damit die Seite nie weiss-bleibt.
+function legacyProfile(p: typeof profile.$inferSelect): VoiceProfile {
+  return {
+    mode: "destilliert",
+    identity: p.voiceMd.split("\n").find((l) => l.trim().length > 0)?.replace(/^#+\s*/, "") ?? "Stimmprofil",
+    scales: [],
+    quotes: [],
+    usesPhrases: [],
+    neverSays: [],
+    registerNote: "",
+    confidence: "",
+    proofPrompt: p.proofPrompt,
+    proofBefore: p.proofBefore,
+    proofAfter: p.proofAfter,
+    dropInChatgpt: p.dropInChatgpt,
+    dropInClaude: p.dropInClaude,
+    dropInGemini: p.dropInGemini,
   };
 }
 
@@ -30,11 +51,21 @@ export default async function VoiceProfilePage({ params }: Props) {
   const { slug } = await params;
   const locale = await getLocale();
   const d = t(locale).result;
-  const copy = { copyLabel: t(locale).sources.forward.copy, copiedLabel: t(locale).sources.forward.copied };
 
   const rows = await db.select().from(profile).where(eq(profile.slug, slug)).limit(1);
   const p = rows[0];
   if (!p) notFound();
+
+  let parsed: VoiceProfile;
+  if (p.profileJson) {
+    try {
+      parsed = JSON.parse(p.profileJson) as VoiceProfile;
+    } catch {
+      parsed = legacyProfile(p);
+    }
+  } else {
+    parsed = legacyProfile(p);
+  }
 
   // Drizzle `mode: "timestamp"` liefert bereits ein Date.
   const created = p.createdAt as Date;
@@ -49,7 +80,7 @@ export default async function VoiceProfilePage({ params }: Props) {
     <>
       <SiteHeader theme="cream" locale={locale} />
 
-      <header className="wrap pt-32 pb-10">
+      <header className="wrap pt-32 pb-8">
         <p className="eyebrow">{d.tag}</p>
         <h1 className="display-l mb-4 max-w-[20ch]">{d.title}</h1>
         <p className="text-base" style={{ color: "var(--soft)" }}>
@@ -57,55 +88,7 @@ export default async function VoiceProfilePage({ params }: Props) {
         </p>
       </header>
 
-      {/* HELD: VOICE.md + Download + so benutzt du es */}
-      <section className="wrap pb-12">
-        <div className="surface p-6 md:p-10">
-          <div className="flex flex-wrap items-start justify-between gap-4 mb-6">
-            <div>
-              <p className="hfile hfile--dark">VOICE.md</p>
-              <h2 className="text-2xl md:text-3xl font-bold tracking-tight">{d.voiceLabel}</h2>
-            </div>
-            <DownloadVoiceButton voiceMd={p.voiceMd} slug={p.slug} label={d.download} />
-          </div>
-          <pre
-            className="text-sm leading-relaxed whitespace-pre-wrap font-mono p-5 rounded-xl overflow-x-auto"
-            style={{ background: "#fff", color: "var(--ink)" }}
-          >
-            {p.voiceMd}
-          </pre>
-        </div>
-      </section>
-
-      {/* Drop-in: so benutzt du es */}
-      <section className="wrap pb-16">
-        <p className="eyebrow">{d.howEyebrow}</p>
-        <h2 className="display-l mb-3 max-w-[22ch]">{d.howTitle}</h2>
-        <p className="mb-8 max-w-[54ch]" style={{ color: "var(--soft)" }}>{d.howIntro}</p>
-        <div className="grid md:grid-cols-3 gap-6">
-          <CopyBlock tool="ChatGPT" where={d.chatgptWhere} value={p.dropInChatgpt} {...copy} />
-          <CopyBlock tool="Claude" where={d.claudeWhere} value={p.dropInClaude} {...copy} />
-          <CopyBlock tool="Gemini" where={d.geminiWhere} value={p.dropInGemini} {...copy} />
-        </div>
-      </section>
-
-      {/* Beweis — sichtbarer Vorher/Nachher */}
-      <section className="wrap pb-16">
-        <p className="eyebrow">{d.proofEyebrow}</p>
-        <h2 className="display-l mb-8 max-w-[22ch]">{d.proofTitle}</h2>
-
-        <div
-          className="rounded-2xl p-5 mb-6 font-mono text-sm leading-relaxed"
-          style={{ background: "var(--ink-deep)", color: "var(--cream)" }}
-        >
-          <span className="label-mono mr-2" style={{ color: "rgba(250,247,242,0.5)" }}>{d.promptLabel}</span>
-          {p.proofPrompt}
-        </div>
-
-        <div className="grid md:grid-cols-2 gap-4">
-          <ProofCard label={d.proofBefore} tone="muted" body={p.proofBefore} />
-          <ProofCard label={d.proofAfter} tone="accent" body={p.proofAfter} />
-        </div>
-      </section>
+      <ProfileView profile={parsed} voiceMd={p.voiceMd} slug={p.slug} locale={locale} />
 
       {/* CTA */}
       <section className="wrap py-16">
@@ -125,7 +108,7 @@ export default async function VoiceProfilePage({ params }: Props) {
             <h2 className="display-l mb-4 max-w-[24ch]">{d.ctaTitle}</h2>
             <p className="text-lg mb-6 max-w-[44ch]" style={{ color: "rgba(250,247,242,0.78)" }}>{d.ctaText}</p>
             <a
-              href={`mailto:${CONTACT_EMAIL}?subject=Brand%20Voice%20Profile%20-%20Anfrage`}
+              href={`mailto:${CONTACT_EMAIL}?subject=Stimmprofil%20-%20Anfrage`}
               className="pill pill--accent pill--arrow"
             >
               {d.ctaButton}
@@ -136,21 +119,5 @@ export default async function VoiceProfilePage({ params }: Props) {
 
       <SiteFooter locale={locale} />
     </>
-  );
-}
-
-function ProofCard({ label, body, tone }: { label: string; body: string; tone: "muted" | "accent" }) {
-  const isAccent = tone === "accent";
-  return (
-    <div
-      className="rounded-2xl p-6 flex flex-col"
-      style={{
-        background: isAccent ? "var(--ink)" : "var(--cream-2)",
-        color: isAccent ? "var(--cream)" : "var(--ink)",
-      }}
-    >
-      <p className="label-mono mb-3" style={{ color: isAccent ? "var(--accent)" : "var(--soft)" }}>{label}</p>
-      <p className="leading-relaxed whitespace-pre-wrap">{body}</p>
-    </div>
   );
 }

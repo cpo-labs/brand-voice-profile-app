@@ -10,8 +10,8 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: "Brand Voice Profile",
     description: de
-      ? "Gib uns ein paar echte Texte und bekomme ein VOICE.md, das jedem LLM hilft, in deiner Stimme zu schreiben. Kostenloses Tool von AppSales Labs."
-      : "Give us a few real texts and get a VOICE.md that helps any LLM write in your voice. Free tool by AppSales Labs.",
+      ? "Gib uns ein paar echte Texte und bekomme ein Stimmprofil, das jeder KI hilft, in deiner Stimme zu schreiben. Kostenloses Werkzeug von AppSales Labs."
+      : "Give us a few real texts and get a voice profile that helps any AI write in your voice. Free tool by AppSales Labs.",
     metadataBase: new URL("https://voice.labs.appsales-consulting.de"),
     robots: { index: true, follow: true },
     openGraph: {

@@ -5,7 +5,7 @@ export interface ExtractedFile {
   content: string;
 }
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB per file
+const MAX_FILE_SIZE = 15 * 1024 * 1024; // 15 MB per file
 const MAX_TOTAL_FILES = 20;
 
 export async function extractTextFromFiles(files: File[]): Promise<ExtractedFile[]> {
