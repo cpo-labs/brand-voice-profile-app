@@ -1,9 +1,18 @@
-import type { VoiceProfile, VoiceScale, VoiceQuote } from "./voice-extraction";
+import type {
+  OpeningClosing,
+  PunctuationHabit,
+  VoiceProfile,
+  VoiceQuote,
+  VoiceScale,
+} from "./voice-types";
 
 // Baut aus dem strukturierten Profil ein Stimmprofil-Dokument im Format von
-// Christians Master-Template (Voice DNA / Tonalitaet / Lexikon / Skalen /
-// Beleg-Zitate / Was-die-Stimme-nie-tut / Vorher-Nachher / Drop-in / Confidence).
-// Serverseitig gebaut -> kein fragiles Markdown vom Modell, konsistente Form.
+// Christians Master-Template. Pflicht-Sektionen: Kern-Identitaet, Skalen,
+// Tonalitaet & Rhythmus, Satzrhythmus, Interpunktion, Lexikon/Wortwahl,
+// Openings/Closings, Do/Dont, Anti-Patterns, Beleg-Zitate, Vorher/Nachher,
+// Drop-ins, Confidence. Serverseitig gebaut -> kein fragiles Markdown vom
+// Modell, konsistente Form. Aeltere Profile ohne `markers` bekommen die
+// Marker-Sektionen nicht (Abwaertskompatibilitaet beim Re-Render).
 
 function scaleLine(s: VoiceScale): string {
   const filled = "●".repeat(s.value);
@@ -20,10 +29,83 @@ function bulletList(items: string[]): string {
   return items.map((i) => `- ${i}`).join("\n");
 }
 
+function openingClosingList(items: OpeningClosing[]): string {
+  if (items.length === 0) return "- _(keine erfasst)_";
+  return items
+    .map((o) => `- **${o.pattern}**\n  z.B. „${o.example}“ _(${o.source})_`)
+    .join("\n");
+}
+
+function punctuationTable(habits: PunctuationHabit[]): string {
+  if (habits.length === 0) return "_(keine erfasst)_";
+  const rows = habits.map((h) => `| ${h.mark} | ${h.usage} | ${h.note} |`);
+  return ["| Zeichen | Nutzung | Wofuer |", "|---|---|---|", ...rows].join("\n");
+}
+
 const MODE_LABEL: Record<VoiceProfile["mode"], string> = {
   destilliert: "aus echten Schreibproben destilliert",
   uebersetzt: "aus einem fertigen Stil-Dokument uebernommen",
 };
+
+function markerSections(p: VoiceProfile): string {
+  const m = p.markers;
+  if (!m) return "";
+  const lexicon = m.lexicon
+    .map((e) => `- **„${e.phrase}“** — ${e.note}\n  z.B. „${e.exampleText}“ _(${e.exampleSource})_`)
+    .join("\n");
+  const filler =
+    m.fillerWords.length > 0
+      ? `\n**Typische Fuell-/Verbindungswoerter:** ${m.fillerWords.map((w) => `„${w}“`).join(", ")}`
+      : "";
+
+  return `## Lexikon / Wortwahl
+
+${lexicon}
+${filler}
+
+## Satzrhythmus
+
+- **Mittlere Satzlaenge:** ~${Math.round(m.rhythm.avgSentenceWords)} Woerter
+- **Streuung:** ${m.rhythm.spread}
+- **Fragmente:** ${m.rhythm.fragments}
+- **Fluss:** ${m.rhythm.flow}
+
+> „${m.rhythm.evidenceText}“ _(${m.rhythm.evidenceSource})_
+
+## Interpunktion
+
+${punctuationTable(m.punctuation)}
+
+## Openings
+
+${openingClosingList(m.openings)}
+
+## Closings
+
+${openingClosingList(m.closings)}
+
+## Do / Dont
+
+### Do
+
+${bulletList(m.dos)}
+
+### Dont
+
+${bulletList(m.donts)}
+
+## Anti-Patterns
+
+Was diese Stimme nie tut:
+
+${bulletList(m.antiPatterns)}
+
+## Aussagen-Stil
+
+${m.claimStyle}
+
+`;
+}
 
 export function buildVoiceMd(p: VoiceProfile): string {
   const today = new Date().toISOString().slice(0, 10);
@@ -44,7 +126,7 @@ ${p.scales.map(scaleLine).join("\n")}
 
 ${p.registerNote}
 
-## Lexikon
+${markerSections(p)}## Lexikon-Kurzliste
 
 ### Das nutzt du wirklich
 

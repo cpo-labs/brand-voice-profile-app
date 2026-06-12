@@ -7,8 +7,9 @@ import { Reveal } from "./_components/reveal";
 import { getLocale } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
 
-// Die Voice-Generierung (Server Action) läuft auf dieser Route — bis 60s erlauben.
-export const maxDuration = 60;
+// Die Voice-Generierung (Server Action) läuft auf dieser Route. Die Pipeline
+// ist zweistufig (Marker + Verdichtung) — bis 300s erlauben (Fluid Compute).
+export const maxDuration = 300;
 
 export default async function HomePage() {
   const locale = await getLocale();

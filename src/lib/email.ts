@@ -50,6 +50,77 @@ export async function sendGmailAccessRequest({
   }
 }
 
+// Datenschutz-Hinweis fuer den Forward-Pfad — steht in jeder Status-Mail.
+const FORWARD_PRIVACY_NOTE =
+  "Datenschutz: Wir nutzen deine weitergeleiteten Mails ausschließlich, um dein Stimmprofil zu erstellen. " +
+  "Nach der Erstellung löschen wir sie — spätestens 14 Tage nach der letzten Mail.";
+
+export interface ForwardStatusArgs {
+  email: string;
+  sampleCount: number;
+  /** Erstellen-Link, sobald genug Proben da sind — sonst null. */
+  generateLink: string | null;
+}
+
+/**
+ * Status-Antwort auf jede verarbeitete Forward-Mail: Probenzahl + ab
+ * 3 Proben der Link zur Profil-Erstellung.
+ */
+export async function sendForwardStatus({
+  email,
+  sampleCount,
+  generateLink,
+}: ForwardStatusArgs): Promise<void> {
+  const subject = generateLink
+    ? `Genug Material: dein Stimmprofil wartet (${sampleCount} Proben)`
+    : `Mail angekommen: ${sampleCount} ${sampleCount === 1 ? "Probe" : "Proben"} gesammelt`;
+
+  const lines = [
+    "Hi,",
+    "",
+    `wir haben jetzt ${sampleCount} ${sampleCount === 1 ? "Textprobe" : "Textproben"} von dir.`,
+    "",
+    ...(generateLink
+      ? [
+          "Das reicht für ein gutes Profil. Hier erstellen:",
+          generateLink,
+          "",
+          "Du kannst auch noch mehr Mails weiterleiten, bevor du erstellst — mehr Material, schärferes Profil.",
+        ]
+      : [
+          "Ab 3 Proben schicken wir dir den Link zur Profil-Erstellung.",
+          "Leite einfach weitere Mails weiter, die nach dir klingen.",
+        ]),
+    "",
+    FORWARD_PRIVACY_NOTE,
+    "",
+    "AppSales Labs",
+  ];
+
+  if (!resend) {
+    // Dev-only Fallback; email ist user-PII und gehoert nicht in Prod-Logs.
+    if (process.env.NODE_ENV === "development") {
+      console.log("\n[Brand Voice Profile] Forward-Status (RESEND_API_KEY not set):");
+      console.log(`  To:      ${email}`);
+      console.log(`  Samples: ${sampleCount}`);
+      console.log(`  Link:    ${generateLink ?? "(noch keiner)"}\n`);
+    }
+    return;
+  }
+
+  try {
+    await resend.emails.send({
+      from: fromAddress,
+      to: email,
+      subject,
+      text: lines.join("\n"),
+    });
+  } catch (err) {
+    // Status-Mail darf den Sammel-Flow nicht blockieren.
+    console.error("[Brand Voice Profile] Forward-status send failed:", err);
+  }
+}
+
 export interface PermalinkArgs {
   email: string;
   permalink: string;

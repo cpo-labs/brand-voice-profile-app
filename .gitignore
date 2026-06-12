@@ -49,3 +49,7 @@ data/
 *.db-shm
 test-results/
 tsconfig.tsbuildinfo
+
+# Eval (Fixtures + Ergebnisse enthalten echte Texte — nie committen)
+scripts/eval/fixtures/
+scripts/eval/results/
