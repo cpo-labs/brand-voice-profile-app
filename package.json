@@ -29,6 +29,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "db:push": "drizzle-kit push --config=src/lib/db/drizzle.config.ts",
     "db:generate": "drizzle-kit generate --config=src/lib/db/drizzle.config.ts",
     "db:studio": "drizzle-kit studio --config=src/lib/db/drizzle.config.ts"
@@ -56,6 +58,8 @@
     "eslint": "^9",
     "eslint-config-next": "^16.0.0",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "tsx": "^4.22.4",
+    "typescript": "^5",
+    "vitest": "^4.1.8"
   }
 }
