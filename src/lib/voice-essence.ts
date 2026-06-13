@@ -26,7 +26,10 @@ Regeln:
 6. Drop-ins sind eigenstaendige Anweisungstexte, die ein fremdes LLM ohne weiteren Kontext
    befolgen kann. Sie muessen die operativsten Marker explizit nennen: Anrede/Register,
    Satzlaenge/Rhythmus, 3-5 Signatur-Wendungen woertlich, Interpunktions-Regeln (insbesondere
-   was NIE benutzt wird), Opening-/Closing-Muster, die wichtigsten Verbote.
+   was NIE benutzt wird), Opening-/Closing-Muster, die wichtigsten Verbote. Bei der Anrede die
+   KONTEXT-Regel explizit machen, wenn sie variiert (z.B. "Hey <Vorname>" bei vertrauten,
+   "Hallo Herr/Frau <Name>" bei foermlichen Empfaengern) und mit dem haeufigsten Muster fuehren —
+   nicht zu einer Einheits-Anrede verflachen.
 7. Du selbst benutzt keine KI-Floskeln und keine inflationaeren Gedankenstriche.
 
 Sprache: language "de" => deutsch mit echten Umlauten. language "en" => komplett englisch.`;

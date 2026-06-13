@@ -29,17 +29,39 @@ Kontakt-CTA — das ist die Lead-Mechanik.
 - **mammoth** + **pdf-parse** für File-Extraction
 - **zod** für Validation
 
+## Drei Wege rein
+
+1. **Drop & Generate** — Dateien direkt hochladen (eingabefrei, kein Account).
+2. **Forward** — eigene Mails an eine Sammeladresse weiterleiten. Pro Absender
+   werden die Proben gesammelt; ab 3 Proben kommt per Status-Mail ein signierter
+   Erstellen-Link (`/forward/[token]`). Forwarded-Header, Zitate und Signaturen
+   werden gestrippt. Proben sind transient: Löschung nach Erstellung, spätestens
+   nach 14 Tagen.
+3. **Gmail** — Read-only-Skeleton hinter `GMAIL_OAUTH_ENABLED` (Default aus,
+   kein OAuth-Flow erreichbar). Refresh-Token wird AES-256-GCM verschlüsselt.
+
 ## Datenschutz
 
-E-Mails werden **ungehasht** in der DB gespeichert und ausschließlich für den
-Permalink-Versand verwendet. Keine Weitergabe, kein Newsletter. Auf Anfrage
-löschen wir Profil + Run-Eintrag. Die hochgeladenen Texte selbst werden nicht
-persistiert — nur das daraus generierte Voice-Profil.
+E-Mails werden **nie im Klartext** persistiert — in der DB steht nur ein
+HMAC-SHA256-Hash (`EMAIL_HASH_SECRET`), genutzt für Rate-Limit und Dedup. Der
+Klartext lebt transient für den Mail-Versand. Der Forward-Erstellen-Link trägt
+die Adresse signiert in der URL statt sie zu speichern. Keine Weitergabe, kein
+Newsletter. Die hochgeladenen Texte selbst werden nicht persistiert — nur das
+daraus generierte Voice-Profil.
+
+## Tests & Eval
+
+- **vitest** (`npm test`): rate-limit, text-extraction, voice-extraction,
+  voice-md (Pflicht-Sektionen), forward-stripping, forward-batches,
+  forward-links, gmail-crypto.
+- **Blind-Eval** (`node scripts/eval/run-eval.mjs`): Hold-out-Verfahren, ein
+  LLM-Judge vergleicht profil-gestützten Text vs. generisch gegen das Original.
+  Schwelle 4/5. Fixtures liegen **außerhalb des Repos**
+  (`BVP_EVAL_FIXTURES_DIR`, Default `~/.bvp-eval-fixtures`,
+  Struktur `<dir>/<persona>/NN.txt`) — nie committen.
 
 ## Bekannte Limits
 
-- **Keine Test-Suite** im MVP. Kritische Pfade (`rate-limit`, `text-extraction`,
-  `voice-extraction`) sind erste Test-Kandidaten.
 - **Rate-Limit-Race:** zwischen `checkLimit` und `recordRun` liegt ein
   Single-Roundtrip-Window. Bei strikt parallelen Requests mit gleicher E-Mail
   können beide den Limit-Check passieren. Für Lead-Magnet-Volumen unkritisch.
@@ -83,6 +105,13 @@ npm run dev        # http://localhost:3000
 | `PUBLIC_BASE_URL`              | nein    | URL für Permalinks in E-Mails (Default: `http://localhost:3000`)   |
 | `PROFILE_LIMIT_PER_EMAIL`      | nein    | Default `1`                                                        |
 | `PROFILE_LIMIT_GLOBAL_MONTHLY` | nein    | Default `100`                                                      |
+| `EMAIL_HASH_SECRET`            | ja      | HMAC-Key für E-Mail-Hash + signierte Forward-Links                 |
+| `POLLER_SHARED_SECRET`         | nur Forward | Shared Secret, das der IMAP-Poller in `x-poller-secret` sendet  |
+| `CONTACT_EMAIL`                | nein    | Kontakt-/Fallback-Adresse                                          |
+| `GMAIL_OAUTH_ENABLED`          | nein    | Default aus. Nur `true` + Google-Credentials schaltet OAuth scharf |
+| `GOOGLE_CLIENT_ID` / `_SECRET` | nur Gmail | Google-OAuth-Credentials (Phase 2)                               |
+| `GMAIL_TOKEN_KEY`              | nur Gmail | 32-Byte-Key (base64) für AES-256-GCM der Refresh-Tokens          |
+| `BVP_EVAL_FIXTURES_DIR`        | nur Eval | Pfad zu den Eval-Fixtures außerhalb des Repos                    |
 
 ## Projekt-Struktur
 

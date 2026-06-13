@@ -59,9 +59,21 @@ type Dict = {
     demoTag: string; demoTitle: (author: string) => string; demoIntro: string;
     demoBackEyebrow: string; demoBackTitle: string; demoBackText: string; demoBackButton: string;
   };
+  forwardPage: {
+    tag: string;
+    title: string;
+    ready: (count: number) => string;
+    cta: string; ctaPending: string;
+    more: string;
+    note: string;
+    invalidTitle: string; invalidBody: string;
+    notEnoughTitle: string; notEnough: (have: number, need: number) => string;
+    back: string;
+  };
   footer: { tagline: string };
   errors: {
     invalidEmail: string; noFiles: string; generic: string; limitFallback: string;
+    forwardLinkInvalid: string; forwardNotEnough: string;
     pageTitle: string; pageBody: string; pageRetry: string;
   };
 };
@@ -185,12 +197,28 @@ const de: Dict = {
     demoBackText: "Drei Wege rein, der erste funktioniert sofort. Leg dein eigenes Profil an.",
     demoBackButton: "Eigenes Profil erstellen",
   },
+  forwardPage: {
+    tag: "Aus deinen weitergeleiteten Mails",
+    title: "Genug Material. Zeit für dein Profil.",
+    ready: (count) => `Wir haben ${count} ${count === 1 ? "Textprobe" : "Textproben"} von dir gesammelt.`,
+    cta: "Stimmprofil jetzt erstellen",
+    ctaPending: "Erstelle…",
+    more: "Du kannst auch noch mehr Mails weiterleiten, bevor du erstellst — mehr Material, schärferes Profil.",
+    note: "Wir nutzen die Proben nur für dein Profil und löschen sie direkt nach der Erstellung.",
+    invalidTitle: "Dieser Link gilt nicht mehr.",
+    invalidBody: "Der Erstellen-Link ist ungültig oder abgelaufen. Leite einfach neue Mails weiter, dann bekommst du einen frischen Link.",
+    notEnoughTitle: "Noch ein bisschen Material fehlt.",
+    notEnough: (have, need) => `Wir haben erst ${have} von ${need} Proben. Leite noch ${need - have} weiter, dann geht's los.`,
+    back: "Zur Startseite",
+  },
   footer: { tagline: "Ein Lab-Tool von AppSales" },
   errors: {
     invalidEmail: "Bitte gib eine gültige E-Mail-Adresse ein.",
     noFiles: "Bitte lade mindestens eine Datei hoch.",
     generic: "Etwas ist schiefgelaufen. Probier es nochmal.",
     limitFallback: "Limit erreicht. Schreib uns, wenn du mehr willst.",
+    forwardLinkInvalid: "Dieser Erstellen-Link ist ungültig oder abgelaufen.",
+    forwardNotEnough: "Noch nicht genug Proben für ein Profil. Leite weitere Mails weiter.",
     pageTitle: "Dieses Profil können wir gerade nicht laden",
     pageBody: "Da ist etwas schiefgelaufen. Versuch es in einem Moment nochmal oder erstell dir ein neues Profil.",
     pageRetry: "Nochmal versuchen",
@@ -316,12 +344,28 @@ const en: Dict = {
     demoBackText: "Three ways in, the first works right away. Create your own profile.",
     demoBackButton: "Create your own profile",
   },
+  forwardPage: {
+    tag: "From your forwarded emails",
+    title: "Enough material. Time for your profile.",
+    ready: (count) => `We've collected ${count} ${count === 1 ? "text sample" : "text samples"} from you.`,
+    cta: "Create voice profile now",
+    ctaPending: "Creating…",
+    more: "You can also forward more emails before you create it — more material, sharper profile.",
+    note: "We only use the samples for your profile and delete them right after it's created.",
+    invalidTitle: "This link no longer works.",
+    invalidBody: "The create link is invalid or expired. Just forward new emails and you'll get a fresh link.",
+    notEnoughTitle: "A bit more material needed.",
+    notEnough: (have, need) => `We only have ${have} of ${need} samples. Forward ${need - have} more and you're good to go.`,
+    back: "Back to start",
+  },
   footer: { tagline: "A lab tool by AppSales" },
   errors: {
     invalidEmail: "Please enter a valid email address.",
     noFiles: "Please upload at least one file.",
     generic: "Something went wrong. Please try again.",
     limitFallback: "Limit reached. Drop us a line if you want more.",
+    forwardLinkInvalid: "This create link is invalid or expired.",
+    forwardNotEnough: "Not enough samples for a profile yet. Forward a few more emails.",
     pageTitle: "We can't load this profile right now",
     pageBody: "Something went wrong. Try again in a moment, or create a new profile.",
     pageRetry: "Try again",

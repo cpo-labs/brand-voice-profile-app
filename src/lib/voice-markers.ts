@@ -28,6 +28,10 @@ Was du extrahierst (alles aus den Quellen, nichts erfunden):
    Ausrufezeichen, Fragezeichen, Klammern, Doppelpunkt, Semikolon, Komma-Stil, Emoji/Smileys.
    Nutzung: nie / selten / regelmaessig / oft, plus wofuer.
 4. OPENINGS: 2-5 echte Einstiegs-Muster (Anrede, erster Satz) mit woertlichen Beispielen.
+   Halte die Anrede-Logik nach KONTEXT fest, wenn sie variiert: welche Anrede bei vertrauten
+   Vornamen-Empfaengern (z.B. "Hey <Vorname>"), welche bei foermlichen (z.B. "Hallo Herr <Name>").
+   Im pattern-Feld den Ausloeser nennen und das HAEUFIGSTE Muster zuerst auffuehren — nicht zu
+   einer Einheits-Anrede verflachen, wenn die Quellen mehrere zeigen.
 5. CLOSINGS: 2-5 echte Abschluss-Muster (letzter Satz, Grussformel) mit woertlichen Beispielen.
 6. DO / DONT: je 4-8 konkrete, imperativische Regeln, die ein LLM direkt befolgen kann
    ("Schreibe ...", "Vermeide ..."). Abgeleitet aus dem Material, nicht aus Konventionen.

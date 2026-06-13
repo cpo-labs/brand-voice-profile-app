@@ -1,21 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
+import { GMAIL_SCOPES, googleRedirectUri, isGmailOAuthEnabled } from "@/lib/gmail-oauth";
 
 // Gmail OAuth — start endpoint.
-// Phase 1: emits a clear "setup pending" page so the click does not 404.
-// Phase 2 (when GOOGLE_CLIENT_ID is provisioned): builds the actual
-// authorization URL with scope https://www.googleapis.com/auth/gmail.readonly
-// and redirects to Google.
-
-const SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"];
+// Phase 1 (Default): GMAIL_OAUTH_ENABLED ist aus → eine klare "Setup laeuft"-
+// Seite, damit der Klick nicht 404t und kein OAuth-Flow erreichbar ist.
+// Phase 2 (wenn GMAIL_OAUTH_ENABLED + Google-Credentials gesetzt sind):
+// baut die Authorization-URL (Scope gmail.readonly) und leitet zu Google.
 
 export function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const email = searchParams.get("email") ?? "";
 
-  const clientId = process.env.GOOGLE_CLIENT_ID;
-  const baseUrl = process.env.PUBLIC_BASE_URL ?? "http://localhost:3000";
-
-  if (!clientId) {
+  if (!isGmailOAuthEnabled()) {
     return new NextResponse(setupPendingHtml(email), {
       status: 200,
       headers: { "content-type": "text/html; charset=utf-8" },
@@ -26,12 +22,11 @@ export function GET(req: NextRequest) {
   const state = encodeURIComponent(
     Buffer.from(JSON.stringify({ email })).toString("base64url")
   );
-  const redirectUri = `${baseUrl}/api/auth/google/callback`;
   const params = new URLSearchParams({
-    client_id: clientId,
-    redirect_uri: redirectUri,
+    client_id: process.env.GOOGLE_CLIENT_ID as string,
+    redirect_uri: googleRedirectUri(),
     response_type: "code",
-    scope: SCOPES.join(" "),
+    scope: GMAIL_SCOPES.join(" "),
     access_type: "offline",
     prompt: "consent",
     state,

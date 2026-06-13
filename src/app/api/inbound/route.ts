@@ -1,12 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { timingSafeEqual } from "node:crypto";
 import { z } from "zod";
-import { generateProfileFromTexts } from "@/lib/generate-profile";
+import { stripAndFilter } from "@/lib/forward-stripping";
+import {
+  addSamplesToBatch,
+  cleanupExpiredBatches,
+} from "@/lib/forward-batches";
+import { buildForwardLink } from "@/lib/forward-links";
+import { sendForwardStatus } from "@/lib/email";
 
 // Inbound endpoint for the forward path: the IMAP poller (Mac Mini) parses
-// forwarded mails to briefing@appsales-consulting.com and POSTs the extracted
-// text here. Secret-guarded — the poller signs every request with the shared
-// secret. The forward path always has the sender's email.
+// forwarded mails to the collection address and POSTs the extracted text here.
+// Secret-guarded — the poller signs every request with the shared secret.
+//
+// Sammel-Logik statt Sofort-Generierung: jede weitergeleitete Mail wird pro
+// Absender (Hash) als Probe gesammelt. Ab MIN_SAMPLES_TO_GENERATE bekommt der
+// Absender per Status-Mail den signierten Erstellen-Link. So entsteht das
+// Profil aus mehreren echten Mails statt aus einer einzigen.
 
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
@@ -56,14 +66,45 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { slug } = await generateProfileFromTexts({
+    // Forwarded-Header, Quotes und Signaturen strippen, sonst lernt das Profil
+    // Outlook-Boilerplate statt Stimme. Zu kurze Reste fallen raus.
+    const samples = stripAndFilter(parsed.data.texts);
+    if (samples.length === 0) {
+      return NextResponse.json(
+        { ok: false, error: "no usable text after stripping forwarded boilerplate" },
+        { status: 200 }
+      );
+    }
+
+    // Opportunistischer Retention-Cleanup (kein eigener Cron noetig).
+    await cleanupExpiredBatches();
+
+    const state = await addSamplesToBatch(parsed.data.email, samples);
+
+    const baseUrl = process.env.PUBLIC_BASE_URL ?? "http://localhost:3000";
+    const generateLink = state.readyToGenerate
+      ? buildForwardLink(baseUrl, state.token, parsed.data.email)
+      : null;
+
+    // Status-Antwort: Probenzahl, ab 3 Proben der Erstellen-Link.
+    await sendForwardStatus({
       email: parsed.data.email,
-      texts: parsed.data.texts,
+      sampleCount: state.sampleCount,
+      generateLink,
     });
-    return NextResponse.json({ ok: true, slug }, { status: 200 });
+
+    return NextResponse.json(
+      {
+        ok: true,
+        sampleCount: state.sampleCount,
+        accepted: state.accepted,
+        readyToGenerate: state.readyToGenerate,
+      },
+      { status: 200 }
+    );
   } catch (err) {
-    // Rate-limit / validation / LLM errors → handled, return 200 with the
-    // message so the poller can log it (and decide whether to retry).
+    // Sammel-/Stripping-/DB-Fehler → handled, 200 mit Message, damit der
+    // Poller loggen (und ggf. retryen) kann.
     const error = err instanceof Error ? err.message : String(err);
     return NextResponse.json({ ok: false, error }, { status: 200 });
   }
