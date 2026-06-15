@@ -32,6 +32,25 @@ describe("decodeTextBuffer (Umlaut-Encoding)", () => {
   });
 });
 
+// Spiegelt den Download-Pfad (download-voice-button.tsx): das VOICE.md geht als
+// UTF-8-Blob raus. Byte-Pruefung, dass Umlaute in der heruntergeladenen Datei
+// korrekt ankommen.
+describe("Download-Blob (UTF-8-Byte-Pruefung)", () => {
+  test("ein VOICE.md mit Umlauten kommt als korrektes UTF-8 aus dem Blob", async () => {
+    // Arrange
+    const voiceMd = "# Stimmprofil\n\nGrüße aus München: ä ö ü ß. Fuß, Größe, Tür.";
+
+    // Act: identisch zum Download-Button (text/plain;charset=utf-8)
+    const blob = new Blob([voiceMd], { type: "text/plain;charset=utf-8" });
+    const bytes = Buffer.from(await blob.arrayBuffer());
+
+    // Assert: zurueck nach UTF-8 dekodiert sind die Umlaute unveraendert
+    expect(bytes.toString("utf-8")).toBe(voiceMd);
+    expect(bytes.toString("utf-8")).toContain("Grüße");
+    expect(bytes.toString("utf-8")).not.toContain("�");
+  });
+});
+
 describe("extractTextFromFiles (Umlaut-Regression)", () => {
   test("erhaelt Umlaute aus einer Windows-1252-kodierten .txt-Datei", async () => {
     // Arrange: deutsche .txt wie aus Notepad/Outlook (latin1), > 50 Zeichen

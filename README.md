@@ -14,7 +14,9 @@ Lead-Magnet-Tool von [AppSales Labs](https://labs.appsales-consulting.de).
    - **VOICE.md** zum Download
    - **3 Drop-in-Versionen** für ChatGPT Custom Instructions, Claude Projects, Gemini Gems
    - **Side-by-side-Proof**: gleicher Prompt, einmal mit Default-LLM, einmal mit deinem Profil
-4. Permalink zum späteren Wiederaufrufen kommt per E-Mail
+4. Optional: gibst du im Upload eine E-Mail an, kommt das fertige `VOICE.md`
+   zusätzlich als Datei-Anhang plus Permalink per Mail. Ohne E-Mail bleibt der
+   Flow komplett eingabefrei.
 
 Ein Profil pro E-Mail. Global gedeckelt auf 100/Monat. Beide Limits führen zum
 Kontakt-CTA — das ist die Lead-Mechanik.
@@ -25,35 +27,32 @@ Kontakt-CTA — das ist die Lead-Mechanik.
 - **TypeScript 5**, **React 19**, **Tailwind 4**
 - **Drizzle ORM** + **Turso (libsql)** für Persistenz
 - **Anthropic Claude Sonnet 4.5** für Voice-Extraction (90 s Server-Timeout)
-- **Resend** für Permalink-Versand (optional in dev)
+- **Resend** für die optionale Profil-Mail mit VOICE.md-Anhang (optional in dev)
 - **mammoth** + **pdf-parse** für File-Extraction
 - **zod** für Validation
 
-## Drei Wege rein
+## Weg rein
 
-1. **Drop & Generate** — Dateien direkt hochladen (eingabefrei, kein Account).
-2. **Forward** — eigene Mails an eine Sammeladresse weiterleiten. Pro Absender
-   werden die Proben gesammelt; ab 3 Proben kommt per Status-Mail ein signierter
-   Erstellen-Link (`/forward/[token]`). Forwarded-Header, Zitate und Signaturen
-   werden gestrippt. Proben sind transient: Löschung nach Erstellung, spätestens
-   nach 14 Tagen.
-3. **Gmail** — Read-only-Skeleton hinter `GMAIL_OAUTH_ENABLED` (Default aus,
-   kein OAuth-Flow erreichbar). Refresh-Token wird AES-256-GCM verschlüsselt.
+**Drop & Generate** — Texte direkt hochladen (TXT, MD, PDF, DOCX), eingabefrei,
+kein Account. Wer keine Datei zur Hand hat, findet auf der Landing eine kurze
+Anleitung, wie man gesendete Mails aus Outlook, Gmail oder Apple Mail als Datei
+exportiert. TXT/MD-Dateien werden encoding-robust gelesen (UTF-8 mit BOM und
+Windows-1252-Fallback), damit Umlaute auch aus Windows-Exporten korrekt
+ankommen.
 
 ## Datenschutz
 
 E-Mails werden **nie im Klartext** persistiert — in der DB steht nur ein
 HMAC-SHA256-Hash (`EMAIL_HASH_SECRET`), genutzt für Rate-Limit und Dedup. Der
-Klartext lebt transient für den Mail-Versand. Der Forward-Erstellen-Link trägt
-die Adresse signiert in der URL statt sie zu speichern. Keine Weitergabe, kein
+Klartext lebt transient für den optionalen Mail-Versand. Keine Weitergabe, kein
 Newsletter. Die hochgeladenen Texte selbst werden nicht persistiert — nur das
 daraus generierte Voice-Profil.
 
 ## Tests & Eval
 
-- **vitest** (`npm test`): rate-limit, text-extraction, voice-extraction,
-  voice-md (Pflicht-Sektionen), forward-stripping, forward-batches,
-  forward-links, gmail-crypto.
+- **vitest** (`npm test`): rate-limit, text-extraction (inkl.
+  Umlaut-/Encoding-Regression), voice-extraction, voice-md (Pflicht-Sektionen),
+  email-Anhang.
 - **Blind-Eval** (`node scripts/eval/run-eval.mjs`): Hold-out-Verfahren, ein
   LLM-Judge vergleicht profil-gestützten Text vs. generisch gegen das Original.
   Schwelle 4/5. Fixtures liegen **außerhalb des Repos**
@@ -100,17 +99,13 @@ npm run dev        # http://localhost:3000
 | `ANTHROPIC_API_KEY`            | ja      | Anthropic Server-Key, für Voice-Extraction                         |
 | `DATABASE_URL`                 | ja      | `file:./data/dev.db` lokal, `libsql://...` für Turso in Production |
 | `DATABASE_AUTH_TOKEN`          | nur Turso | Auth-Token für Hosted-Turso                                      |
-| `RESEND_API_KEY`               | nein    | Wenn gesetzt, schickt Permalink per Mail. Sonst Console-Log.       |
+| `RESEND_API_KEY`               | nein    | Wenn gesetzt + E-Mail angegeben: Profil-Mail mit Anhang. Sonst Console-Log. |
 | `RESEND_FROM`                  | nein    | Absender-Adresse (Default: `info@appsales-consulting.de`)    |
 | `PUBLIC_BASE_URL`              | nein    | URL für Permalinks in E-Mails (Default: `http://localhost:3000`)   |
 | `PROFILE_LIMIT_PER_EMAIL`      | nein    | Default `1`                                                        |
 | `PROFILE_LIMIT_GLOBAL_MONTHLY` | nein    | Default `100`                                                      |
-| `EMAIL_HASH_SECRET`            | ja      | HMAC-Key für E-Mail-Hash + signierte Forward-Links                 |
-| `POLLER_SHARED_SECRET`         | nur Forward | Shared Secret, das der IMAP-Poller in `x-poller-secret` sendet  |
+| `EMAIL_HASH_SECRET`            | ja      | HMAC-Key für den E-Mail-Hash (Rate-Limit/Dedup)                    |
 | `CONTACT_EMAIL`                | nein    | Kontakt-/Fallback-Adresse                                          |
-| `GMAIL_OAUTH_ENABLED`          | nein    | Default aus. Nur `true` + Google-Credentials schaltet OAuth scharf |
-| `GOOGLE_CLIENT_ID` / `_SECRET` | nur Gmail | Google-OAuth-Credentials (Phase 2)                               |
-| `GMAIL_TOKEN_KEY`              | nur Gmail | 32-Byte-Key (base64) für AES-256-GCM der Refresh-Tokens          |
 | `BVP_EVAL_FIXTURES_DIR`        | nur Eval | Pfad zu den Eval-Fixtures außerhalb des Repos                    |
 
 ## Projekt-Struktur
@@ -129,7 +124,7 @@ src/
     ├── voice-extraction.ts    Prompt + JSON-Parsing
     ├── text-extraction.ts     TXT/MD/PDF/DOCX → string
     ├── rate-limit.ts          per-email + global monthly cap
-    ├── email.ts               Permalink-Mail via Resend (oder Console)
+    ├── email.ts               Profil-Mail mit VOICE.md-Anhang via Resend (oder Console)
     ├── slug.ts                URL-safe Short-Slug
     └── db/
         ├── schema.ts          Drizzle: profile + profile_run

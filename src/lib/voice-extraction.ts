@@ -53,13 +53,12 @@ export function detectModeHint(texts: SourceText[]): VoiceMode {
 }
 
 // ── Korpus-Budget (Stufe 1, Single-Pass) ────────────────────────────────────
-// Grosser Korpus in EINEM Pass: ~200k Zeichen (~50-60k Token Input) passen
-// bequem in einen Sonnet-Call. Gegenueber dem MVP (120k) erhoeht, damit
-// groessere Uploads (z.B. ganze Mail-Archive als MD) ohne Map-Reduce
-// verarbeitet werden. Noch groessere Uploads werden gesampelt statt
-// abgelehnt: pro Datei Kopf+Ende, damit Einstieg und Verlauf der Stimme
-// erhalten bleiben.
-export const SAMPLE_CHAR_BUDGET = 200_000;
+// Konservativ bei ~90k Zeichen (~22-25k Token Input) gehalten: das reicht fuer
+// ein repraesentatives Stimmprofil, haelt den Stufe-1-Call aber spuerbar
+// schneller und billiger als die fruehere 200k-Grenze (die regelmaessig in
+// Richtung Timeout lief). Groessere Uploads werden gesampelt statt abgelehnt:
+// pro Datei Kopf+Ende, damit Einstieg und Verlauf der Stimme erhalten bleiben.
+export const SAMPLE_CHAR_BUDGET = 90_000;
 const MIN_PER_FILE = 1_200;
 
 export function sampleForAnalysis(texts: SourceText[]): SourceText[] {

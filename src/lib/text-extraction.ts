@@ -1,12 +1,10 @@
 import mammoth from "mammoth";
+import { MAX_FILE_SIZE, MAX_TOTAL_FILES, extOf } from "./upload-limits";
 
 export interface ExtractedFile {
   filename: string;
   content: string;
 }
-
-const MAX_FILE_SIZE = 15 * 1024 * 1024; // 15 MB per file
-const MAX_TOTAL_FILES = 20;
 
 const UTF8_BOM = /^﻿/;
 
@@ -44,7 +42,7 @@ export async function extractTextFromFiles(files: File[]): Promise<ExtractedFile
       );
     }
 
-    const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+    const ext = extOf(file.name);
     const buffer = Buffer.from(await file.arrayBuffer());
 
     let content: string;

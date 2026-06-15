@@ -16,8 +16,8 @@ interface Props {
 export function ProfileView({ profile, voiceMd, slug, locale }: Props) {
   const d = t(locale).result;
   const copy = {
-    copyLabel: t(locale).sources.forward.copy,
-    copiedLabel: t(locale).sources.forward.copied,
+    copyLabel: d.copy,
+    copiedLabel: d.copied,
   };
 
   return (

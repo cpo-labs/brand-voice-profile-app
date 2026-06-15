@@ -1,19 +1,23 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
-import { useFormStatus } from "react-dom";
+import { useActionState, useEffect, useMemo, useRef, useState } from "react";
 import { generateProfile, type GenerateState } from "@/app/actions/generate";
+import { ALLOWED_EXTENSIONS, MAX_FILE_SIZE, MAX_TOTAL_FILES, extOf } from "@/lib/upload-limits";
 import { t, type Locale } from "@/lib/i18n";
 
 const ACCEPT = ".txt,.md,.markdown,.pdf,.docx";
-const MAX_FILES = 20;
-const MAX_FILE_SIZE = 15 * 1024 * 1024;
+// Ab hier weisen wir auf langsamere Analyse hin (Soft-Hinweis, kein Block).
+const LONG_INPUT_BYTES = 2 * 1024 * 1024;
+const LONG_INPUT_FILES = 12;
 
 export function DropCard({ locale }: { locale: Locale }) {
   const d = t(locale).sources.drop;
-  const [state, formAction] = useActionState<GenerateState, FormData>(generateProfile, {});
+  const [state, formAction, isPending] = useActionState<GenerateState, FormData>(generateProfile, {});
   const [files, setFiles] = useState<File[]>([]);
   const [dragOver, setDragOver] = useState(false);
+  // Client-seitige Ablehnungen (Format/Groesse/Anzahl) — getrennt vom
+  // serverseitigen state.error (z.B. "kein nutzbarer Text").
+  const [notice, setNotice] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const filesRef = useRef<HTMLInputElement>(null);
 
@@ -25,23 +29,37 @@ export function DropCard({ locale }: { locale: Locale }) {
     filesRef.current.files = dt.files;
   }, [files]);
 
+  const totalBytes = useMemo(() => files.reduce((sum, f) => sum + f.size, 0), [files]);
+  const showLongHint = files.length >= LONG_INPUT_FILES || totalBytes >= LONG_INPUT_BYTES;
+
   function addFiles(incoming: FileList | File[]) {
     const arr = Array.from(incoming);
+    const rejects: string[] = [];
     setFiles((prev) => {
       const merged = [...prev];
       for (const f of arr) {
-        if (merged.length >= MAX_FILES) break;
-        if (f.size > MAX_FILE_SIZE) continue;
+        if (merged.length >= MAX_TOTAL_FILES) {
+          rejects.push(d.rejectMany(MAX_TOTAL_FILES));
+          break;
+        }
+        if (!ALLOWED_EXTENSIONS.includes(extOf(f.name) as (typeof ALLOWED_EXTENSIONS)[number])) {
+          rejects.push(d.rejectFormat(f.name));
+          continue;
+        }
+        if (f.size > MAX_FILE_SIZE) {
+          rejects.push(d.rejectLarge(f.name));
+          continue;
+        }
         if (merged.some((x) => x.name === f.name && x.size === f.size)) continue;
         merged.push(f);
       }
       return merged;
     });
+    setNotice(rejects.length ? rejects[0] : null);
   }
 
   return (
     <article className="icard icard--primary">
-      <span className="icard__badge">{t(locale).sources.recommended}</span>
       <p className="icard__num">{d.num}</p>
       <h3 className="icard__title">{d.title}</h3>
       <p className="icard__sub">{d.sub}</p>
@@ -111,32 +129,62 @@ export function DropCard({ locale }: { locale: Locale }) {
           </ul>
         )}
 
-        {state?.error && (
+        {showLongHint && !isPending && (
+          <p className="text-xs rounded-xl px-3 py-2" style={{ background: "rgba(24,20,16,0.06)", color: "var(--soft)" }}>
+            {d.longHint}
+          </p>
+        )}
+
+        {/* Client-Ablehnung (notice) hat Vorrang; sonst der Server-Fehler. */}
+        {(notice ?? (!isPending ? state?.error : null)) && (
           <p
             className="text-sm rounded-xl px-3 py-2"
             style={{ background: "rgba(230,80,66,0.12)", color: "var(--coral-deep)" }}
           >
-            {state.error}
+            {notice ?? state?.error}
           </p>
         )}
 
-        <SubmitButton label={d.cta} pendingLabel={d.ctaPending} disabled={files.length === 0} />
+        <label className="flex flex-col gap-1 text-sm">
+          <span className="label-mono">{d.emailLabel}</span>
+          <input
+            type="email"
+            name="email"
+            placeholder={d.emailPlaceholder}
+            autoComplete="email"
+            disabled={isPending}
+            className="rounded-xl px-3 py-2 border"
+            style={{ borderColor: "rgba(24,20,16,0.22)", background: "var(--cream-2)" }}
+          />
+          <span className="text-xs" style={{ color: "var(--soft)" }}>{d.emailHint}</span>
+        </label>
+
+        {isPending ? (
+          <div
+            className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm"
+            style={{ background: "var(--cream-2)", color: "var(--ink)" }}
+            role="status"
+            aria-live="polite"
+          >
+            <span
+              aria-hidden
+              className="inline-block w-4 h-4 rounded-full animate-spin shrink-0"
+              style={{ border: "2px solid rgba(24,20,16,0.22)", borderTopColor: "var(--accent)" }}
+            />
+            <span>{d.progress}</span>
+          </div>
+        ) : (
+          <button
+            type="submit"
+            disabled={files.length === 0}
+            className="pill pill--ink pill--arrow self-start"
+          >
+            {d.cta}
+          </button>
+        )}
 
         <p className="text-xs" style={{ color: "var(--soft)" }}>{d.note}</p>
       </form>
     </article>
-  );
-}
-
-function SubmitButton({ label, pendingLabel, disabled }: { label: string; pendingLabel: string; disabled: boolean }) {
-  const { pending } = useFormStatus();
-  return (
-    <button
-      type="submit"
-      disabled={disabled || pending}
-      className="pill pill--ink pill--arrow self-start"
-    >
-      {pending ? pendingLabel : label}
-    </button>
   );
 }

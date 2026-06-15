@@ -1,8 +1,7 @@
 import { SiteFooter } from "./_components/site-footer";
 import { SiteHeader } from "./_components/site-header";
 import { DropCard } from "./_components/drag-drop-card";
-import { ForwardCard } from "./_components/forward-card";
-import { GoogleCard } from "./_components/gmail-card";
+import { HowToExport } from "./_components/howto-export";
 import { Reveal } from "./_components/reveal";
 import { getLocale } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
@@ -88,16 +87,14 @@ export default async function HomePage() {
             <p className="section__intro">{d.sources.intro}</p>
           </Reveal>
 
-          <div
-            className="grid gap-6 lg:gap-8"
-            style={{ gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 320px), 1fr))" }}
-          >
+          <div className="max-w-[560px] mx-auto">
             <Reveal><DropCard locale={locale} /></Reveal>
-            <Reveal delay={0.1}><ForwardCard locale={locale} /></Reveal>
-            <Reveal delay={0.2}><GoogleCard locale={locale} /></Reveal>
           </div>
         </div>
       </section>
+
+      {/* ── Kein Text zur Hand? Export-Anleitung ── */}
+      <HowToExport locale={locale} />
 
       {/* ── Warum das funktioniert ── */}
       <section className="section section--dim">

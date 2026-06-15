@@ -19,24 +19,24 @@ type Dict = {
     title: string;
     titleEm: string;
     intro: string;
-    recommended: string;
     drop: {
       num: string; title: string; sub: string;
       zoneLead: string; zoneTitle: string; zoneHint: string;
       cta: string; ctaPending: string; note: string;
+      emailLabel: string; emailPlaceholder: string; emailHint: string;
+      progress: string; longHint: string;
+      rejectFormat: (name: string) => string;
+      rejectLarge: (name: string) => string;
+      rejectMany: (max: number) => string;
     };
-    forward: {
-      num: string; title: string; sub: string;
-      addrLabel: string; subjLabel: string; copy: string; copied: string; copyFail: string;
-      emailToken: string; subjectMaterial: string; subjectHint: string;
-      steps: string[]; note: string;
-    };
-    google: {
-      num: string; title: string; sub: string; soon: string;
-      bullets: string[]; note: string;
-      emailLabel: string; emailPlaceholder: string; cta: string; ctaPending: string;
-      requested: string; errEmail: string;
-    };
+  };
+  howto: {
+    eyebrow: string;
+    title: string;
+    titleEm: string;
+    intro: string;
+    mailboxes: { name: string; steps: string[]; linkLabel: string; linkHref: string }[];
+    note: string;
   };
   why: {
     eyebrow: string; title: string; titleEm: string; intro: string;
@@ -53,27 +53,16 @@ type Dict = {
     proofBefore: string; proofAfter: string;
     confidenceTitle: string;
     fullEyebrow: string; fullTitle: string; download: string; downloadFile: string;
+    copy: string; copied: string;
     howEyebrow: string; howTitle: string; howIntro: string;
     chatgptWhere: string; claudeWhere: string; geminiWhere: string;
     ctaEyebrow: string; ctaTitle: string; ctaText: string; ctaButton: string;
     demoTag: string; demoTitle: (author: string) => string; demoIntro: string;
     demoBackEyebrow: string; demoBackTitle: string; demoBackText: string; demoBackButton: string;
   };
-  forwardPage: {
-    tag: string;
-    title: string;
-    ready: (count: number) => string;
-    cta: string; ctaPending: string;
-    more: string;
-    note: string;
-    invalidTitle: string; invalidBody: string;
-    notEnoughTitle: string; notEnough: (have: number, need: number) => string;
-    back: string;
-  };
   footer: { tagline: string };
   errors: {
     invalidEmail: string; noFiles: string; generic: string; limitFallback: string;
-    forwardLinkInvalid: string; forwardNotEnough: string;
     pageTitle: string; pageBody: string; pageRetry: string;
   };
 };
@@ -89,59 +78,71 @@ const de: Dict = {
     demoCta: "Beispiel ansehen",
   },
   sources: {
-    eyebrow: "Drei Wege rein",
-    title: "Such dir deinen ",
-    titleEm: "Weg",
-    intro: "Drei Eingänge, ein Ergebnis. Klick dich in eine Karte: der erste funktioniert sofort, ganz ohne Verbindung.",
-    recommended: "Empfohlen",
+    eyebrow: "So geht's",
+    title: "Gib uns deine ",
+    titleEm: "Texte",
+    intro: "Lad ein paar echte Texte von dir hoch, die nach dir klingen. Den Rest macht die Analyse. Kein Account, keine Verbindung.",
     drop: {
       num: "01 · Dateien",
       title: "Texte direkt droppen",
-      sub: "Ein paar PDFs, DOCX, MD oder TXT, was du eh schon geschrieben hast. Schnellster Weg, ohne Account-Verbindung.",
+      sub: "Ein paar PDFs, DOCX, MD oder TXT, was du eh schon geschrieben hast. Je mehr echtes Material, desto schärfer das Profil.",
       zoneLead: "Deine Texte",
       zoneTitle: "Drop · Klick · Auswählen",
       zoneHint: "Text · Markdown · PDF · Word",
       cta: "Stimmprofil erstellen",
-      ctaPending: "Erstelle…",
+      ctaPending: "Analysiere…",
       note: "Max 20 Dateien · 15 MB pro Datei. Wir speichern nur das Profil, nicht die Quelltexte.",
+      emailLabel: "E-Mail (optional)",
+      emailPlaceholder: "du@beispiel.de",
+      emailHint: "Wenn du willst, schicken wir dir das fertige Profil zusätzlich als Datei per Mail.",
+      progress: "Wir lesen deine Texte und destillieren deine Stimme. Das dauert meist 30 bis 90 Sekunden.",
+      longHint: "Sehr viel Material? Nutz lieber ein paar repräsentative, kürzere Proben statt alles auf einmal, sonst dauert die Analyse zu lange.",
+      rejectFormat: (name) => `„${name}“ hat ein nicht unterstütztes Format. Erlaubt: TXT, MD, PDF, Word.`,
+      rejectLarge: (name) => `„${name}“ ist zu groß. Maximal 15 MB pro Datei.`,
+      rejectMany: (max) => `Maximal ${max} Dateien auf einmal. Die überzähligen haben wir weggelassen.`,
     },
-    forward: {
-      num: "02 · Weiterleiten",
-      title: "Mails weiterleiten",
-      sub: "Du hast einen Stapel Mails, die nach dir klingen? Leite sie an unsere Sammeladresse weiter, wir extrahieren den Text. Kein Account, keine Verbindung.",
-      addrLabel: "Weiterleiten an",
-      subjLabel: "Betreff",
-      copy: "Kopieren",
-      copied: "Kopiert!",
-      copyFail: "Manuell markieren",
-      emailToken: "deine@email.de",
-      subjectMaterial: "Mein Voice-Material",
-      subjectHint: "Setz deine eigene E-Mail in die eckigen Klammern, daran erkennen wir dich.",
-      steps: [
-        "Mails weiterleiten (oder als Anhang) an die Adresse oben",
-        "Deine E-Mail im Betreff in eckigen Klammern",
-        "Sobald genug Material da ist, generieren wir und mailen dir den Link",
-      ],
-      note: "Wir verarbeiten den Sammel-Posteingang regelmäßig. Wenn es eilig ist, schreib uns kurz.",
-    },
-    google: {
-      num: "03 · Google",
-      title: "Gmail verbinden",
-      sub: "Aus deinen gesendeten Mails wird das ehrlichste Profil. Read-only, kein Posting in deinem Namen.",
-      soon: "Auf Anfrage",
-      bullets: [
-        "Nur gesendete Mails, keine eingehenden",
-        "Der Zugang wird nach der Auswertung gelöscht",
-        "Nur Lesezugriff, kein Posten in deinem Namen",
-      ],
-      note: "Gmail-Lesezugriff läuft in einer geschlossenen Test-Phase. Trag deine Gmail-Adresse ein, wir schalten dich frei und schicken dir den Link.",
-      emailLabel: "Deine Gmail-Adresse",
-      emailPlaceholder: "du@gmail.com",
-      cta: "Zugang anfragen",
-      ctaPending: "Sende…",
-      requested: "Eingetragen. Wir schalten dich frei und schicken dir den Link per Mail.",
-      errEmail: "Bitte gib eine gültige Gmail-Adresse ein.",
-    },
+  },
+  howto: {
+    eyebrow: "Kein Text zur Hand?",
+    title: "Wie exportiere ich meine ",
+    titleEm: "gesendeten Mails",
+    intro: "Deine gesendeten Mails sind das ehrlichste Material. So holst du sie als Datei raus und lädst sie oben hoch.",
+    mailboxes: [
+      {
+        name: "Outlook",
+        steps: [
+          "Eine gesendete Mail öffnen",
+          "Datei → Speichern unter wählen",
+          "Als Dateityp „Nur Text (*.txt)“ wählen und speichern",
+          "Ein paar davon hochladen",
+        ],
+        linkLabel: "Outlook-Hilfe",
+        linkHref: "https://support.microsoft.com/de-de/outlook",
+      },
+      {
+        name: "Gmail",
+        steps: [
+          "Eine gesendete Mail öffnen",
+          "Oben rechts auf das Drucken-Symbol klicken",
+          "Als Ziel „Als PDF speichern“ wählen",
+          "Die PDFs hochladen",
+        ],
+        linkLabel: "Gmail-Hilfe",
+        linkHref: "https://support.google.com/mail/",
+      },
+      {
+        name: "Apple Mail",
+        steps: [
+          "Eine oder mehrere gesendete Mails markieren",
+          "Ablage → Sichern unter wählen",
+          "Format „Nur Text“ wählen und sichern",
+          "Die Dateien hochladen",
+        ],
+        linkLabel: "Apple-Mail-Hilfe",
+        linkHref: "https://support.apple.com/de-de/mail",
+      },
+    ],
+    note: "Drei, vier echte Mails reichen schon. Persönliche Daten kannst du vorher rausnehmen, das Profil braucht den Stil, nicht den Inhalt.",
   },
   why: {
     eyebrow: "Warum das funktioniert",
@@ -179,6 +180,8 @@ const de: Dict = {
     fullTitle: "Vollständiges Profil ansehen und sichern",
     download: "Profil sichern",
     downloadFile: "stimmprofil",
+    copy: "Kopieren",
+    copied: "Kopiert!",
     howEyebrow: "So benutzt du es",
     howTitle: "In 30 Sekunden eingebaut.",
     howIntro: "Kopier die passende Kurzversion in dein KI-Tool. Ab dann schreibt es in deiner Stimme.",
@@ -197,28 +200,12 @@ const de: Dict = {
     demoBackText: "Drei Wege rein, der erste funktioniert sofort. Leg dein eigenes Profil an.",
     demoBackButton: "Eigenes Profil erstellen",
   },
-  forwardPage: {
-    tag: "Aus deinen weitergeleiteten Mails",
-    title: "Genug Material. Zeit für dein Profil.",
-    ready: (count) => `Wir haben ${count} ${count === 1 ? "Textprobe" : "Textproben"} von dir gesammelt.`,
-    cta: "Stimmprofil jetzt erstellen",
-    ctaPending: "Erstelle…",
-    more: "Du kannst auch noch mehr Mails weiterleiten, bevor du erstellst — mehr Material, schärferes Profil.",
-    note: "Wir nutzen die Proben nur für dein Profil und löschen sie direkt nach der Erstellung.",
-    invalidTitle: "Dieser Link gilt nicht mehr.",
-    invalidBody: "Der Erstellen-Link ist ungültig oder abgelaufen. Leite einfach neue Mails weiter, dann bekommst du einen frischen Link.",
-    notEnoughTitle: "Noch ein bisschen Material fehlt.",
-    notEnough: (have, need) => `Wir haben erst ${have} von ${need} Proben. Leite noch ${need - have} weiter, dann geht's los.`,
-    back: "Zur Startseite",
-  },
   footer: { tagline: "Ein Lab-Tool von AppSales" },
   errors: {
     invalidEmail: "Bitte gib eine gültige E-Mail-Adresse ein.",
     noFiles: "Bitte lade mindestens eine Datei hoch.",
     generic: "Etwas ist schiefgelaufen. Probier es nochmal.",
     limitFallback: "Limit erreicht. Schreib uns, wenn du mehr willst.",
-    forwardLinkInvalid: "Dieser Erstellen-Link ist ungültig oder abgelaufen.",
-    forwardNotEnough: "Noch nicht genug Proben für ein Profil. Leite weitere Mails weiter.",
     pageTitle: "Dieses Profil können wir gerade nicht laden",
     pageBody: "Da ist etwas schiefgelaufen. Versuch es in einem Moment nochmal oder erstell dir ein neues Profil.",
     pageRetry: "Nochmal versuchen",
@@ -236,59 +223,71 @@ const en: Dict = {
     demoCta: "See an example",
   },
   sources: {
-    eyebrow: "Three ways in",
-    title: "Pick your ",
-    titleEm: "way in",
-    intro: "Three entry points, one result. Click into a card: the first works right away, no connection needed.",
-    recommended: "Recommended",
+    eyebrow: "How it works",
+    title: "Give us your ",
+    titleEm: "texts",
+    intro: "Upload a few real texts of yours that sound like you. The analysis does the rest. No account, no connection.",
     drop: {
       num: "01 · Files",
       title: "Drop texts directly",
-      sub: "A few PDFs, DOCX, MD or TXT, whatever you've already written. Fastest way, no account connection.",
+      sub: "A few PDFs, DOCX, MD or TXT, whatever you've already written. The more real material, the sharper the profile.",
       zoneLead: "Your texts",
       zoneTitle: "Drop · Click · Pick",
       zoneHint: "Text · Markdown · PDF · Word",
       cta: "Create voice profile",
-      ctaPending: "Creating…",
+      ctaPending: "Analyzing…",
       note: "Max 20 files · 15 MB each. We only store the profile, never your source texts.",
+      emailLabel: "Email (optional)",
+      emailPlaceholder: "you@example.com",
+      emailHint: "If you like, we'll also send the finished profile to you as a file by email.",
+      progress: "We're reading your texts and distilling your voice. This usually takes 30 to 90 seconds.",
+      longHint: "Lots of material? Use a few representative, shorter samples instead of everything at once, otherwise the analysis takes too long.",
+      rejectFormat: (name) => `"${name}" has an unsupported format. Allowed: TXT, MD, PDF, Word.`,
+      rejectLarge: (name) => `"${name}" is too large. Max 15 MB per file.`,
+      rejectMany: (max) => `Max ${max} files at once. We left out the extra ones.`,
     },
-    forward: {
-      num: "02 · Forward",
-      title: "Forward emails",
-      sub: "Got a pile of emails that sound like you? Forward them to our collection address, we extract the text. No account, no connection.",
-      addrLabel: "Forward to",
-      subjLabel: "Subject",
-      copy: "Copy",
-      copied: "Copied!",
-      copyFail: "Select manually",
-      emailToken: "you@example.com",
-      subjectMaterial: "My voice material",
-      subjectHint: "Put your own email in the square brackets, that is how we recognize you.",
-      steps: [
-        "Forward emails (or as attachments) to the address above",
-        "Put your email in square brackets in the subject",
-        "Once there's enough material, we generate and email you the link",
-      ],
-      note: "We process the shared inbox regularly. If it's urgent, drop us a line.",
-    },
-    google: {
-      num: "03 · Google",
-      title: "Connect Gmail",
-      sub: "Your sent mail makes the most honest profile. Read-only, no posting on your behalf.",
-      soon: "On request",
-      bullets: [
-        "Sent mail only, no incoming mail",
-        "Access is deleted after the analysis",
-        "Read-only, no posting on your behalf",
-      ],
-      note: "Gmail read access runs in a closed test phase. Enter your Gmail address, we will grant access and send you the link.",
-      emailLabel: "Your Gmail address",
-      emailPlaceholder: "you@gmail.com",
-      cta: "Request access",
-      ctaPending: "Sending…",
-      requested: "You're on the list. We'll grant access and email you the link.",
-      errEmail: "Please enter a valid Gmail address.",
-    },
+  },
+  howto: {
+    eyebrow: "No text at hand?",
+    title: "How do I export my ",
+    titleEm: "sent emails",
+    intro: "Your sent emails are the most honest material. Here's how to save them as a file and upload them above.",
+    mailboxes: [
+      {
+        name: "Outlook",
+        steps: [
+          "Open a sent email",
+          "Choose File → Save As",
+          "Pick \"Text only (*.txt)\" as the file type and save",
+          "Upload a few of them",
+        ],
+        linkLabel: "Outlook help",
+        linkHref: "https://support.microsoft.com/en-us/outlook",
+      },
+      {
+        name: "Gmail",
+        steps: [
+          "Open a sent email",
+          "Click the print icon at the top right",
+          "Choose \"Save as PDF\" as the destination",
+          "Upload the PDFs",
+        ],
+        linkLabel: "Gmail help",
+        linkHref: "https://support.google.com/mail/",
+      },
+      {
+        name: "Apple Mail",
+        steps: [
+          "Select one or more sent emails",
+          "Choose File → Save As",
+          "Pick \"Plain Text\" as the format and save",
+          "Upload the files",
+        ],
+        linkLabel: "Apple Mail help",
+        linkHref: "https://support.apple.com/en-us/mail",
+      },
+    ],
+    note: "Three or four real emails are plenty. You can remove personal details first — the profile needs the style, not the content.",
   },
   why: {
     eyebrow: "Why this works",
@@ -326,6 +325,8 @@ const en: Dict = {
     fullTitle: "View and save the full profile",
     download: "Save profile",
     downloadFile: "voice-profile",
+    copy: "Copy",
+    copied: "Copied!",
     howEyebrow: "How to use it",
     howTitle: "Wired in within 30 seconds.",
     howIntro: "Copy the matching short version into your AI tool. From then on it writes in your voice.",
@@ -344,28 +345,12 @@ const en: Dict = {
     demoBackText: "Three ways in, the first works right away. Create your own profile.",
     demoBackButton: "Create your own profile",
   },
-  forwardPage: {
-    tag: "From your forwarded emails",
-    title: "Enough material. Time for your profile.",
-    ready: (count) => `We've collected ${count} ${count === 1 ? "text sample" : "text samples"} from you.`,
-    cta: "Create voice profile now",
-    ctaPending: "Creating…",
-    more: "You can also forward more emails before you create it — more material, sharper profile.",
-    note: "We only use the samples for your profile and delete them right after it's created.",
-    invalidTitle: "This link no longer works.",
-    invalidBody: "The create link is invalid or expired. Just forward new emails and you'll get a fresh link.",
-    notEnoughTitle: "A bit more material needed.",
-    notEnough: (have, need) => `We only have ${have} of ${need} samples. Forward ${need - have} more and you're good to go.`,
-    back: "Back to start",
-  },
   footer: { tagline: "A lab tool by AppSales" },
   errors: {
     invalidEmail: "Please enter a valid email address.",
     noFiles: "Please upload at least one file.",
     generic: "Something went wrong. Please try again.",
     limitFallback: "Limit reached. Drop us a line if you want more.",
-    forwardLinkInvalid: "This create link is invalid or expired.",
-    forwardNotEnough: "Not enough samples for a profile yet. Forward a few more emails.",
     pageTitle: "We can't load this profile right now",
     pageBody: "Something went wrong. Try again in a moment, or create a new profile.",
     pageRetry: "Try again",
