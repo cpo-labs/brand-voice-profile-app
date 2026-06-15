@@ -20,6 +20,8 @@
   --font: "Montserrat", -apple-system, system-ui, sans-serif;
   --mono: "JetBrains Mono", "SF Mono", Menlo, monospace;
   --gut: clamp(1.4rem, 5vw, 6.5rem);
+  /* Einheitlicher vertikaler Abstand zwischen gestapelten Profil-Sektionen. */
+  --section-gap: clamp(3.5rem, 6vw, 5.5rem);
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
   --rl: 34px;
   --rm: 22px;
@@ -122,6 +124,10 @@
 .section { padding: clamp(4rem, 9vw, 9rem) 0; position: relative; }
 .section--dim { background: var(--cream-2); }
 .wrap { max-width: 84rem; margin: 0 auto; padding: 0 var(--gut); }
+/* Gestapelte Profil-Sektionen: einheitlicher Abstand zum naechsten Block,
+   ersetzt heterogene pb-10/12/14/16. Der Abstand wirkt zugleich als
+   Top-Luft fuer den .eyebrow-Sektionskopf des Folgeblocks. */
+.vsection { padding-bottom: var(--section-gap); }
 .section__head { max-width: 78rem; margin-bottom: clamp(2.4rem, 5vw, 4rem); }
 .eyebrow {
   font-family: var(--mono); font-size: .78rem; letter-spacing: .16em; text-transform: uppercase;

@@ -7,7 +7,7 @@ import { SiteFooter } from "@/app/_components/site-footer";
 import { ProfileView } from "@/app/_components/profile-view";
 import { getLocale } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
-import type { VoiceProfile } from "@/lib/voice-extraction";
+import { loadProfileFromRow } from "@/lib/load-profile";
 
 // Per-Request-DB-Lookup nach Slug — nie statisch prerendern.
 export const dynamic = "force-dynamic";
@@ -26,27 +26,6 @@ export async function generateMetadata({ params }: Props) {
   };
 }
 
-// Aelteres Profil ohne strukturiertes JSON: minimal aus den Spalten
-// rekonstruieren, damit die Seite nie weiss-bleibt.
-function legacyProfile(p: typeof profile.$inferSelect): VoiceProfile {
-  return {
-    mode: "destilliert",
-    identity: p.voiceMd.split("\n").find((l) => l.trim().length > 0)?.replace(/^#+\s*/, "") ?? "Stimmprofil",
-    scales: [],
-    quotes: [],
-    usesPhrases: [],
-    neverSays: [],
-    registerNote: "",
-    confidence: "",
-    proofPrompt: p.proofPrompt,
-    proofBefore: p.proofBefore,
-    proofAfter: p.proofAfter,
-    dropInChatgpt: p.dropInChatgpt,
-    dropInClaude: p.dropInClaude,
-    dropInGemini: p.dropInGemini,
-  };
-}
-
 export default async function VoiceProfilePage({ params }: Props) {
   const { slug } = await params;
   const locale = await getLocale();
@@ -56,16 +35,7 @@ export default async function VoiceProfilePage({ params }: Props) {
   const p = rows[0];
   if (!p) notFound();
 
-  let parsed: VoiceProfile;
-  if (p.profileJson) {
-    try {
-      parsed = JSON.parse(p.profileJson) as VoiceProfile;
-    } catch {
-      parsed = legacyProfile(p);
-    }
-  } else {
-    parsed = legacyProfile(p);
-  }
+  const parsed = loadProfileFromRow(p);
 
   // Drizzle `mode: "timestamp"` liefert bereits ein Date.
   const created = p.createdAt as Date;

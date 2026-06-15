@@ -14,6 +14,9 @@ export function CopyBlock({ tool, where, value, copyLabel = "Kopieren", copiedLa
   const [copied, setCopied] = useState(false);
 
   async function copy() {
+    // Guard: bei fehlendem/leerem Wert nichts kopieren, statt den String
+    // "undefined" in die Zwischenablage zu schreiben.
+    if (!value) return;
     try {
       await navigator.clipboard.writeText(value);
       setCopied(true);

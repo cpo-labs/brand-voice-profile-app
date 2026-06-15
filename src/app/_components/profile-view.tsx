@@ -23,7 +23,7 @@ export function ProfileView({ profile, voiceMd, slug, locale }: Props) {
   return (
     <>
       {/* Kern-Identitaet */}
-      <section className="wrap pb-10">
+      <section className="wrap vsection">
         <div className="surface p-6 md:p-9">
           <p className="eyebrow">{d.identityEyebrow}</p>
           <p className="text-xl md:text-2xl leading-snug font-semibold max-w-[46ch]">
@@ -33,7 +33,7 @@ export function ProfileView({ profile, voiceMd, slug, locale }: Props) {
       </section>
 
       {/* Skalen */}
-      <section className="wrap pb-14">
+      <section className="wrap vsection">
         <p className="eyebrow">{d.scalesEyebrow}</p>
         <h2 className="display-l mb-2 max-w-[22ch]">{d.scalesTitle}</h2>
         <p className="mb-8 max-w-[52ch]" style={{ color: "var(--soft)" }}>{d.scalesIntro}</p>
@@ -47,7 +47,7 @@ export function ProfileView({ profile, voiceMd, slug, locale }: Props) {
       </section>
 
       {/* Beleg-Zitate */}
-      <section className="wrap pb-14">
+      <section className="wrap vsection">
         <p className="eyebrow">{d.quotesEyebrow}</p>
         <h2 className="display-l mb-2 max-w-[22ch]">{d.quotesTitle}</h2>
         <p className="mb-8 max-w-[52ch]" style={{ color: "var(--soft)" }}>{d.quotesIntro}</p>
@@ -59,7 +59,7 @@ export function ProfileView({ profile, voiceMd, slug, locale }: Props) {
       </section>
 
       {/* Lexikon */}
-      <section className="wrap pb-14">
+      <section className="wrap vsection">
         <div className="grid md:grid-cols-2 gap-6">
           <div className="surface p-6 md:p-8">
             <p className="eyebrow">{d.usesTitle}</p>
@@ -81,7 +81,7 @@ export function ProfileView({ profile, voiceMd, slug, locale }: Props) {
       </section>
 
       {/* Vorher / Nachher */}
-      <section className="wrap pb-16">
+      <section className="wrap vsection">
         <p className="eyebrow">{d.proofEyebrow}</p>
         <h2 className="display-l mb-8 max-w-[22ch]">{d.proofTitle}</h2>
 
@@ -100,7 +100,7 @@ export function ProfileView({ profile, voiceMd, slug, locale }: Props) {
       </section>
 
       {/* So baust du es ein (Drop-in) */}
-      <section className="wrap pb-16">
+      <section className="wrap vsection">
         <p className="eyebrow">{d.howEyebrow}</p>
         <h2 className="display-l mb-3 max-w-[22ch]">{d.howTitle}</h2>
         <p className="mb-8 max-w-[54ch]" style={{ color: "var(--soft)" }}>{d.howIntro}</p>
@@ -112,7 +112,7 @@ export function ProfileView({ profile, voiceMd, slug, locale }: Props) {
       </section>
 
       {/* Sicherheit / offene Punkte */}
-      <section className="wrap pb-12">
+      <section className="wrap vsection">
         <div className="surface p-6 md:p-8">
           <p className="eyebrow">{d.confidenceTitle}</p>
           <p className="mt-3 max-w-[60ch]" style={{ color: "var(--soft)" }}>{profile.confidence}</p>
@@ -120,7 +120,7 @@ export function ProfileView({ profile, voiceMd, slug, locale }: Props) {
       </section>
 
       {/* Vollstaendiges Profil (sekundaer, einklappbar) */}
-      <section className="wrap pb-16">
+      <section className="wrap vsection">
         <details className="surface p-6 md:p-8">
           <summary className="cursor-pointer flex items-center justify-between gap-4">
             <span>
