@@ -31,39 +31,9 @@ export async function createTables(): Promise<void> {
       created_at INTEGER NOT NULL DEFAULT (unixepoch())
     )
   `);
-  await db.run(sql`
-    CREATE TABLE IF NOT EXISTS forward_batch (
-      id TEXT PRIMARY KEY,
-      email_hash TEXT NOT NULL UNIQUE,
-      token TEXT NOT NULL UNIQUE,
-      created_at INTEGER NOT NULL DEFAULT (unixepoch()),
-      updated_at INTEGER NOT NULL DEFAULT (unixepoch())
-    )
-  `);
-  await db.run(sql`
-    CREATE TABLE IF NOT EXISTS forward_sample (
-      id TEXT PRIMARY KEY,
-      batch_id TEXT NOT NULL REFERENCES forward_batch(id) ON DELETE CASCADE,
-      filename TEXT NOT NULL,
-      content TEXT NOT NULL,
-      created_at INTEGER NOT NULL DEFAULT (unixepoch())
-    )
-  `);
-  await db.run(sql`
-    CREATE TABLE IF NOT EXISTS gmail_token (
-      id TEXT PRIMARY KEY,
-      email_hash TEXT NOT NULL UNIQUE,
-      refresh_token_enc TEXT NOT NULL,
-      scope TEXT NOT NULL,
-      created_at INTEGER NOT NULL DEFAULT (unixepoch())
-    )
-  `);
 }
 
 export async function clearTables(): Promise<void> {
-  await db.run(sql`DELETE FROM forward_sample`);
-  await db.run(sql`DELETE FROM forward_batch`);
-  await db.run(sql`DELETE FROM gmail_token`);
   await db.run(sql`DELETE FROM profile_run`);
   await db.run(sql`DELETE FROM profile`);
 }

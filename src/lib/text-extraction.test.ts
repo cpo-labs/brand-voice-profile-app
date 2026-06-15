@@ -1,9 +1,55 @@
 import { describe, expect, test } from "vitest";
-import { extractTextFromFiles, countWords } from "./text-extraction";
+import { extractTextFromFiles, countWords, decodeTextBuffer } from "./text-extraction";
 
 function makeFile(name: string, content: string): File {
   return new File([content], name, { type: "text/plain" });
 }
+
+/** Datei aus rohen Bytes bauen (um Nicht-UTF-8-Encodings zu simulieren). */
+function makeBinaryFile(name: string, bytes: Buffer): File {
+  return new File([new Uint8Array(bytes)], name, { type: "text/plain" });
+}
+
+// Regression fuer den Umlaut-Bug: Root-Cause war `buffer.toString("utf-8")`
+// in der Extraktion, das Windows-1252-Dateien (Standard bei deutschen
+// Outlook/Notepad-Exporten) verstuemmelt. decodeTextBuffer faengt das ab.
+describe("decodeTextBuffer (Umlaut-Encoding)", () => {
+  const sample = "Grüße aus München: Mädchen, Tür, Fuß, Größe. ä ö ü ß Ä Ö Ü";
+
+  test("liest UTF-8 mit Umlauten korrekt", () => {
+    expect(decodeTextBuffer(Buffer.from(sample, "utf-8"))).toBe(sample);
+  });
+
+  test("entfernt ein vorangestelltes UTF-8-BOM", () => {
+    const withBom = Buffer.concat([Buffer.from([0xef, 0xbb, 0xbf]), Buffer.from(sample, "utf-8")]);
+    expect(decodeTextBuffer(withBom)).toBe(sample);
+  });
+
+  test("faellt bei Windows-1252 nicht in Mojibake (ä/ö/ü/ß bleiben erhalten)", () => {
+    const decoded = decodeTextBuffer(Buffer.from(sample, "latin1"));
+    expect(decoded).toBe(sample);
+    expect(decoded).not.toContain("�");
+  });
+});
+
+describe("extractTextFromFiles (Umlaut-Regression)", () => {
+  test("erhaelt Umlaute aus einer Windows-1252-kodierten .txt-Datei", async () => {
+    // Arrange: deutsche .txt wie aus Notepad/Outlook (latin1), > 50 Zeichen
+    const text =
+      "Grüße aus München. Schöne Wörter über Größe, Tür und Fuß. " +
+      "Das Mädchen läuft über die Straße zur Bäckerei und kauft Brötchen.";
+    const file = makeBinaryFile("brief.txt", Buffer.from(text, "latin1"));
+
+    // Act
+    const [result] = await extractTextFromFiles([file]);
+
+    // Assert
+    expect(result.content).toContain("Grüße");
+    expect(result.content).toContain("München");
+    expect(result.content).toContain("Fuß");
+    expect(result.content).not.toContain("�");
+  });
+});
 
 describe("extractTextFromFiles", () => {
   test("extracts plain text from txt and md files", async () => {

@@ -19,12 +19,11 @@ export interface GenerateProfileResult {
 }
 
 /**
- * Core profile-generation flow, shared by the server action (drop/upload)
- * and the inbound forward route (IMAP poller).
+ * Core profile-generation flow behind the upload server action.
  *
- * Steps mirror the original action exactly:
+ * Steps:
  *   checkLimit → recordRun → extractVoice → insert profile
- *   → attachProfileToRun → sendProfileReady (if email) → return slug
+ *   → attachProfileToRun → sendProfileReady (nur wenn E-Mail angegeben) → slug
  *
  * Throws on rate-limit, validation, and LLM errors with clear messages.
  * Callers translate/format these as needed.
@@ -81,12 +80,15 @@ export async function generateProfileFromTexts({
 
   await attachProfileToRun(runId, id);
 
-  // Mail nur, wenn eine E-Mail vorliegt (Forward-/Gmail-Pfad hat immer eine).
+  // Mail nur, wenn der Nutzer im Upload optional eine Adresse angegeben hat.
+  // Dann geht die VOICE.md direkt als Datei-Anhang mit raus.
   if (normalizedEmail) {
     const baseUrl = process.env.PUBLIC_BASE_URL ?? "http://localhost:3000";
     await sendProfileReady({
       email: normalizedEmail,
       permalink: `${baseUrl}/voice/${slug}`,
+      voiceMd,
+      fileName: `stimmprofil-${slug}.txt`,
     });
   }
 

@@ -8,6 +8,25 @@ export interface ExtractedFile {
 const MAX_FILE_SIZE = 15 * 1024 * 1024; // 15 MB per file
 const MAX_TOTAL_FILES = 20;
 
+const UTF8_BOM = /^﻿/;
+
+/**
+ * Dekodiert einen Text-Buffer robust. Root-Cause des Umlaut-Bugs: ein blindes
+ * `buffer.toString("utf-8")` verstuemmelt jede Datei, die NICHT UTF-8 ist —
+ * und deutsche .txt-Exporte aus Outlook/Notepad sind ueblicherweise
+ * Windows-1252 (ä/ö/ü/ß werden zu "�"). Strategie: strikt als UTF-8 lesen
+ * (wirft bei ungueltigen Byte-Sequenzen), sonst auf Windows-1252 zurueckfallen.
+ * BOM wird entfernt, damit es nicht ins erste Wort blutet.
+ */
+export function decodeTextBuffer(buffer: Buffer): string {
+  try {
+    const text = new TextDecoder("utf-8", { fatal: true }).decode(buffer);
+    return text.replace(UTF8_BOM, "");
+  } catch {
+    return new TextDecoder("windows-1252").decode(buffer).replace(UTF8_BOM, "");
+  }
+}
+
 export async function extractTextFromFiles(files: File[]): Promise<ExtractedFile[]> {
   if (files.length === 0) {
     throw new Error("Keine Dateien hochgeladen.");
@@ -30,7 +49,7 @@ export async function extractTextFromFiles(files: File[]): Promise<ExtractedFile
 
     let content: string;
     if (ext === "txt" || ext === "md" || ext === "markdown") {
-      content = buffer.toString("utf-8");
+      content = decodeTextBuffer(buffer);
     } else if (ext === "docx") {
       const r = await mammoth.extractRawText({ buffer });
       content = r.value;
