@@ -1,10 +1,11 @@
 import { notFound } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { profile } from "@/lib/db/schema";
+import { profile, job } from "@/lib/db/schema";
 import { SiteHeader } from "@/app/_components/site-header";
 import { SiteFooter } from "@/app/_components/site-footer";
 import { ProfileView } from "@/app/_components/profile-view";
+import { AutoReload } from "@/app/_components/auto-reload";
 import { getLocale } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
 import { loadProfileFromRow } from "@/lib/load-profile";
@@ -33,7 +34,50 @@ export default async function VoiceProfilePage({ params }: Props) {
 
   const rows = await db.select().from(profile).where(eq(profile.slug, slug)).limit(1);
   const p = rows[0];
-  if (!p) notFound();
+
+  if (!p) {
+    // Kein fertiges Profil — laeuft evtl. noch ein Hintergrund-Job dazu.
+    const jrows = await db.select().from(job).where(eq(job.slug, slug)).limit(1);
+    const jb = jrows[0];
+    if (!jb) notFound();
+
+    const failed = jb.status === "failed";
+    return (
+      <>
+        <SiteHeader theme="cream" locale={locale} />
+        <section className="wrap pt-32 pb-24 min-h-[60vh]">
+          <p className="eyebrow">{failed ? d.failedTag : d.pendingTag}</p>
+          <h1 className="display-l mb-4 max-w-[22ch]">{failed ? d.failedTitle : d.pendingTitle}</h1>
+          <p className="text-base max-w-[52ch]" style={{ color: "var(--soft)" }}>
+            {failed ? d.failedBody : d.pendingBody}
+          </p>
+
+          {failed ? (
+            <a href="/#sources" className="pill pill--ink pill--arrow mt-8 inline-flex">
+              {d.failedButton}
+            </a>
+          ) : (
+            <>
+              <div
+                className="mt-8 flex items-center gap-3 rounded-xl px-4 py-3 text-sm"
+                style={{ background: "var(--cream-2)", color: "var(--ink)", maxWidth: 520 }}
+                role="status"
+              >
+                <span
+                  aria-hidden
+                  className="inline-block w-4 h-4 rounded-full animate-spin shrink-0"
+                  style={{ border: "2px solid rgba(24,20,16,0.22)", borderTopColor: "var(--accent)" }}
+                />
+                <span>{d.pendingNote}</span>
+              </div>
+              <AutoReload seconds={15} maxAgeSeconds={600} timeoutMessage={d.pendingTimeout} />
+            </>
+          )}
+        </section>
+        <SiteFooter locale={locale} />
+      </>
+    );
+  }
 
   const parsed = loadProfileFromRow(p);
 

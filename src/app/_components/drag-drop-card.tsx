@@ -152,6 +152,7 @@ export function DropCard({ locale }: { locale: Locale }) {
             name="email"
             placeholder={d.emailPlaceholder}
             autoComplete="email"
+            required
             disabled={isPending}
             className="rounded-xl px-3 py-2 border"
             style={{ borderColor: "rgba(24,20,16,0.22)", background: "var(--cream-2)" }}

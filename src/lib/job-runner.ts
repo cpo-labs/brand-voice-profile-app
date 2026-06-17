@@ -1,9 +1,12 @@
-import { and, asc, eq, lt, or } from "drizzle-orm";
+import { and, asc, eq, isNotNull, lt, or } from "drizzle-orm";
 import { db } from "./db";
-import { job, profile } from "./db/schema";
-import { extractVoiceDeep } from "./voice-extraction";
+import { job, profile, profileRun } from "./db/schema";
+import { extractVoiceDeep, MIN_TOTAL_CHARS } from "./voice-extraction";
 import { sendProfileReady, type ProfileReadyArgs } from "./email";
-import { attachProfileToRun } from "./rate-limit";
+import { attachProfileToRun, recordRun } from "./rate-limit";
+import { generateSlug } from "./slug";
+import { hashEmail } from "./email-hash";
+import { t, type Locale } from "./i18n";
 import type { SourceText, VoiceExtractionResult } from "./voice-types";
 
 // ── Hintergrund-Worker für die tiefe Pipeline ───────────────────────────────
@@ -175,6 +178,76 @@ export async function processJob(
   }
 }
 
+// ── Job anlegen (Upload-Seite) ──────────────────────────────────────────────
+
+export interface EnqueueArgs {
+  /** Pflicht im Hintergrund-Flow — das fertige Profil geht per Mail raus. */
+  email: string;
+  /** Vorab extrahierte Quelltexte (Dateiname + Inhalt). */
+  texts: { filename: string; content: string }[];
+  /** Sprache fuer die Status-Seite und die Mail. */
+  locale: string;
+}
+
+/**
+ * Legt einen Hintergrund-Job an und reserviert den Rate-Limit-Slot. Gibt den
+ * Permalink-Slug zurueck, sodass der Upload sofort auf die Status-Seite leiten
+ * kann. Der zusammengefuehrte Quelltext liegt transient in der Job-Zeile und
+ * wird vom Worker nach Fertigstellung geloescht (PII).
+ */
+export async function enqueueProfileJob({ email, texts, locale }: EnqueueArgs): Promise<{ slug: string }> {
+  // Fehlermeldungen lokalisiert — generateProfile reicht sie unveraendert an die
+  // UI weiter, deshalb darf hier kein hartkodiertes Deutsch entstehen.
+  const e = t(locale as Locale).errors;
+  if (texts.length === 0) {
+    throw new Error(e.noFiles);
+  }
+  const normalizedEmail = email.trim().toLowerCase();
+  const sourceText = texts.map((f) => `── ${f.filename} ──\n${f.content}`).join("\n\n");
+
+  // Mindest-Material schon beim Upload pruefen — sonst scheitert der Job erst
+  // spaeter still im Worker und der Nutzer bekaeme keine Rueckmeldung. Auch: kein
+  // Rate-Limit-Slot fuer Mini-Input. Bewusst gegen `sourceText` (inkl. Trenner)
+  // geprueft: der Worker fuehrt exakt denselben merged Blob durch
+  // extractVoiceDeep, das `content.length` ebenfalls auf `sourceText` zaehlt —
+  // so bleibt der Gate konsistent mit dem tatsaechlichen Pipeline-Minimum.
+  if (sourceText.trim().length < MIN_TOTAL_CHARS) {
+    throw new Error(e.tooLittleText);
+  }
+
+  // Nur die echten Inhalte zaehlen — die `── Dateiname ──`-Trenner sollen den
+  // gespeicherten Wort-Count nicht aufblaehen.
+  const wordCount = texts.reduce(
+    (n, f) => n + f.content.split(/\s+/).filter(Boolean).length,
+    0
+  );
+  const slug = generateSlug(8);
+  const runId = await recordRun({ email: normalizedEmail });
+
+  try {
+    await db.insert(job).values({
+      id: crypto.randomUUID(),
+      slug,
+      status: "pending",
+      emailHash: hashEmail(normalizedEmail),
+      email: normalizedEmail,
+      sourceText,
+      sourceFileCount: texts.length,
+      sourceWordCount: wordCount,
+      locale,
+      runId,
+    });
+  } catch (err) {
+    // Insert fehlgeschlagen (z.B. Slug-Kollision, DB-Blip) → den bereits
+    // reservierten Rate-Limit-Slot wieder freigeben, sonst verliert der Nutzer
+    // Kontingent fuer einen Job, der nie existiert hat.
+    await db.delete(profileRun).where(eq(profileRun.id, runId)).catch(() => {});
+    throw err;
+  }
+
+  return { slug };
+}
+
 /** Cron-Convenience: einen Job greifen und verarbeiten. null, wenn keiner ansteht. */
 export async function runOneJob(
   extract: VoiceExtractor = extractVoiceDeep,
@@ -183,4 +256,24 @@ export async function runOneJob(
   const claimed = await claimNextJob();
   if (!claimed) return null;
   return processJob(claimed, extract, sendMail);
+}
+
+/**
+ * Belt-and-Suspenders-Datenschutz: nullt transiente PII (Klartext-Mail +
+ * Quelltext) auf allen abgeschlossenen Jobs (done/failed), bei denen sie wider
+ * Erwarten noch gesetzt ist. Greift nur, wenn wirklich Reste existieren —
+ * idempotent und billig. Schuetzt vor kuenftigen Pfaden, die den Status setzen,
+ * ohne zu nullen. `retry`/`pending`/`processing` bleiben unberuehrt (brauchen
+ * den Quelltext noch).
+ */
+export async function sweepCompletedJobPii(): Promise<void> {
+  await db
+    .update(job)
+    .set({ email: null, sourceText: null })
+    .where(
+      and(
+        or(eq(job.status, "done"), eq(job.status, "failed")),
+        or(isNotNull(job.email), isNotNull(job.sourceText))
+      )
+    );
 }

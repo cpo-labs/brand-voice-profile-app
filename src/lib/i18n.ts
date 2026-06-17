@@ -59,10 +59,13 @@ type Dict = {
     ctaEyebrow: string; ctaTitle: string; ctaText: string; ctaButton: string;
     demoTag: string; demoTitle: (author: string) => string; demoIntro: string;
     demoBackEyebrow: string; demoBackTitle: string; demoBackText: string; demoBackButton: string;
+    pendingTag: string; pendingTitle: string; pendingBody: string; pendingNote: string; pendingTimeout: string;
+    failedTag: string; failedTitle: string; failedBody: string; failedButton: string;
   };
   footer: { tagline: string };
   errors: {
-    invalidEmail: string; noFiles: string; generic: string; limitFallback: string;
+    invalidEmail: string; emailRequired: string; noFiles: string; generic: string; limitFallback: string;
+    tooLittleText: string;
     pageTitle: string; pageBody: string; pageRetry: string;
   };
 };
@@ -90,12 +93,12 @@ const de: Dict = {
       zoneTitle: "Drop · Klick · Auswählen",
       zoneHint: "Text · Markdown · PDF · Word",
       cta: "Stimmprofil erstellen",
-      ctaPending: "Analysiere…",
-      note: "Max 20 Dateien · 15 MB pro Datei. Wir speichern nur das Profil, nicht die Quelltexte.",
-      emailLabel: "E-Mail (optional)",
+      ctaPending: "Lade hoch…",
+      note: "Max 20 Dateien · 15 MB pro Datei. Quelltexte liegen nur bis zur Erstellung und werden danach gelöscht — gespeichert wird nur dein fertiges Profil.",
+      emailLabel: "E-Mail",
       emailPlaceholder: "du@beispiel.de",
-      emailHint: "Wenn du willst, schicken wir dir das fertige Profil zusätzlich als Datei per Mail.",
-      progress: "Wir lesen deine Texte und destillieren deine Stimme. Das dauert meist 30 bis 90 Sekunden.",
+      emailHint: "Pflicht: Wir bauen dein Profil im Hintergrund und mailen dir den Link, sobald es fertig ist (wenige Minuten).",
+      progress: "Wir nehmen deine Texte an und starten die Analyse…",
       longHint: "Sehr viel Material? Nutz lieber ein paar repräsentative, kürzere Proben statt alles auf einmal, sonst dauert die Analyse zu lange.",
       rejectFormat: (name) => `„${name}“ hat ein nicht unterstütztes Format. Erlaubt: TXT, MD, PDF, Word.`,
       rejectLarge: (name) => `„${name}“ ist zu groß. Maximal 15 MB pro Datei.`,
@@ -199,13 +202,24 @@ const de: Dict = {
     demoBackTitle: "Jetzt mit deinen eigenen Texten.",
     demoBackText: "Drei Wege rein, der erste funktioniert sofort. Leg dein eigenes Profil an.",
     demoBackButton: "Eigenes Profil erstellen",
+    pendingTag: "In Arbeit",
+    pendingTitle: "Dein Stimmprofil wird gebaut.",
+    pendingBody: "Wir analysieren deine Texte über mehrere Stufen und prüfen das Ergebnis mehrfach gegen, damit es wirklich nach dir klingt. Das dauert ein paar Minuten.",
+    pendingNote: "Du kannst diese Seite offen lassen — sie aktualisiert sich selbst. Sobald es fertig ist, schicken wir dir den Link auch per Mail.",
+    pendingTimeout: "Das dauert gerade länger als üblich. Wir bauen dein Profil weiter im Hintergrund und mailen dir den Link, sobald es fertig ist — du musst nicht auf dieser Seite warten.",
+    failedTag: "Fehlgeschlagen",
+    failedTitle: "Das hat leider nicht geklappt.",
+    failedBody: "Bei der Analyse ist etwas schiefgelaufen. Versuch es mit ein paar repräsentativen Texten noch einmal.",
+    failedButton: "Neues Profil erstellen",
   },
   footer: { tagline: "Ein Lab-Tool von AppSales" },
   errors: {
     invalidEmail: "Bitte gib eine gültige E-Mail-Adresse ein.",
+    emailRequired: "Bitte gib deine E-Mail-Adresse an — wir schicken dir das fertige Profil per Mail.",
     noFiles: "Bitte lade mindestens eine Datei hoch.",
     generic: "Etwas ist schiefgelaufen. Probier es nochmal.",
     limitFallback: "Limit erreicht. Schreib uns, wenn du mehr willst.",
+    tooLittleText: "Zu wenig Textmaterial. Gib uns mindestens einen ordentlichen Absatz (~500 Zeichen).",
     pageTitle: "Dieses Profil können wir gerade nicht laden",
     pageBody: "Da ist etwas schiefgelaufen. Versuch es in einem Moment nochmal oder erstell dir ein neues Profil.",
     pageRetry: "Nochmal versuchen",
@@ -235,12 +249,12 @@ const en: Dict = {
       zoneTitle: "Drop · Click · Pick",
       zoneHint: "Text · Markdown · PDF · Word",
       cta: "Create voice profile",
-      ctaPending: "Analyzing…",
-      note: "Max 20 files · 15 MB each. We only store the profile, never your source texts.",
-      emailLabel: "Email (optional)",
+      ctaPending: "Uploading…",
+      note: "Max 20 files · 15 MB each. Source texts are kept only until creation, then deleted — we store only your finished profile.",
+      emailLabel: "Email",
       emailPlaceholder: "you@example.com",
-      emailHint: "If you like, we'll also send the finished profile to you as a file by email.",
-      progress: "We're reading your texts and distilling your voice. This usually takes 30 to 90 seconds.",
+      emailHint: "Required: we build your profile in the background and email you the link once it's ready (a few minutes).",
+      progress: "We're taking your texts and starting the analysis…",
       longHint: "Lots of material? Use a few representative, shorter samples instead of everything at once, otherwise the analysis takes too long.",
       rejectFormat: (name) => `"${name}" has an unsupported format. Allowed: TXT, MD, PDF, Word.`,
       rejectLarge: (name) => `"${name}" is too large. Max 15 MB per file.`,
@@ -344,13 +358,24 @@ const en: Dict = {
     demoBackTitle: "Now with your own texts.",
     demoBackText: "Three ways in, the first works right away. Create your own profile.",
     demoBackButton: "Create your own profile",
+    pendingTag: "In progress",
+    pendingTitle: "Your voice profile is being built.",
+    pendingBody: "We analyze your texts across several stages and verify the result multiple times so it truly sounds like you. This takes a few minutes.",
+    pendingNote: "You can leave this page open — it refreshes itself. Once it's ready, we'll also email you the link.",
+    pendingTimeout: "This is taking longer than usual. We're still building your profile in the background and will email you the link once it's ready — you don't have to wait on this page.",
+    failedTag: "Failed",
+    failedTitle: "That didn't work, unfortunately.",
+    failedBody: "Something went wrong during the analysis. Try again with a few representative texts.",
+    failedButton: "Create a new profile",
   },
   footer: { tagline: "A lab tool by AppSales" },
   errors: {
     invalidEmail: "Please enter a valid email address.",
+    emailRequired: "Please enter your email address — we'll send you the finished profile by email.",
     noFiles: "Please upload at least one file.",
     generic: "Something went wrong. Please try again.",
     limitFallback: "Limit reached. Drop us a line if you want more.",
+    tooLittleText: "Not enough text. Give us at least one solid paragraph (~500 characters).",
     pageTitle: "We can't load this profile right now",
     pageBody: "Something went wrong. Try again in a moment, or create a new profile.",
     pageRetry: "Try again",

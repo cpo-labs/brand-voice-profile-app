@@ -90,7 +90,10 @@ export function sampleForAnalysis(texts: SourceText[]): SourceText[] {
   });
 }
 
-const MIN_TOTAL_CHARS = 500;
+// Minimum-Quelltext fuer eine sinnvolle Analyse. Exportiert, damit der Upload-
+// Gate (enqueueProfileJob) denselben Schwellwert nutzt und ein Job nicht erst
+// spaeter im Worker still scheitert.
+export const MIN_TOTAL_CHARS = 500;
 
 // Zeit-Budgets: Vercel-Function laeuft mit maxDuration 300 (Fluid Compute).
 // Selbst-Abbruch deutlich davor, damit der Nutzer eine saubere Meldung

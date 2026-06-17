@@ -2,10 +2,17 @@ import { beforeAll, beforeEach, describe, expect, test } from "vitest";
 import { eq } from "drizzle-orm";
 import { createTables, clearTables } from "../../tests/db-helper";
 import { db } from "./db";
-import { job, profile } from "./db/schema";
+import { job, profile, profileRun } from "./db/schema";
 import { recordRun } from "./rate-limit";
 import { hashEmail } from "./email-hash";
-import { claimNextJob, runOneJob, type VoiceExtractor, type Mailer } from "./job-runner";
+import {
+  claimNextJob,
+  enqueueProfileJob,
+  runOneJob,
+  sweepCompletedJobPii,
+  type VoiceExtractor,
+  type Mailer,
+} from "./job-runner";
 import type { VoiceExtractionResult } from "./voice-types";
 import type { ProfileReadyArgs } from "./email";
 
@@ -165,5 +172,88 @@ describe("job-runner", () => {
     const j = (await db.select().from(job).where(eq(job.id, id)))[0];
     expect(j.status).toBe("failed");
     expect(j.sourceText).toBeNull();
+  });
+});
+
+describe("enqueueProfileJob", () => {
+  test("creates a pending job, stores source transiently, reserves a run slot", async () => {
+    const { slug } = await enqueueProfileJob({
+      email: "Enq@Example.com",
+      texts: [
+        {
+          filename: "a.txt",
+          content:
+            "Hallo, das ist genug Text fuer einen Job. Ich schreibe hier bewusst einen " +
+            "laengeren Absatz, damit der Upload-Gate ueber dem Pipeline-Minimum von 500 " +
+            "Zeichen liegt und der Job sauber angelegt wird. Meine Stimme ist direkt, " +
+            "warm und ohne Floskeln, ich komme schnell auf den Punkt und erklaere die " +
+            "Sache so, dass man sie sofort versteht.",
+        },
+        {
+          filename: "b.txt",
+          content:
+            "Noch eine Mail mit Inhalt, ebenfalls bewusst ausfuehrlich gehalten. Auch hier " +
+            "geht es darum, genug Material fuer die Analyse zu liefern, damit das " +
+            "Stimmprofil wirklich nach mir klingt und nicht nach generischem KI-Text.",
+        },
+      ],
+      locale: "de",
+    });
+
+    expect(slug).toHaveLength(8);
+    const j = (await db.select().from(job).where(eq(job.slug, slug)))[0];
+    expect(j.status).toBe("pending");
+    expect(j.email).toBe("enq@example.com"); // normalisiert, transienter Klartext
+    expect(j.emailHash).toBeTruthy();
+    expect(j.emailHash).not.toContain("enq"); // nur Hash, kein Klartext
+    expect(j.sourceText).toContain("Hallo");
+    expect(j.sourceText).toContain("Noch eine Mail");
+    expect(j.sourceFileCount).toBe(2);
+    expect(j.runId).toBeTruthy();
+
+    // Rate-Limit-Slot wurde beim Anlegen reserviert.
+    const runs = await db.select().from(profileRun).where(eq(profileRun.id, j.runId as string));
+    expect(runs).toHaveLength(1);
+  });
+
+  test("rejects an empty text list", async () => {
+    await expect(enqueueProfileJob({ email: "x@example.com", texts: [], locale: "de" })).rejects.toThrow();
+  });
+
+  test("rejects too little source material (below the pipeline minimum)", async () => {
+    await expect(
+      enqueueProfileJob({
+        email: "x@example.com",
+        texts: [{ filename: "tiny.txt", content: "Zu kurz." }],
+        locale: "de",
+      })
+    ).rejects.toThrow(/Zu wenig Textmaterial/);
+  });
+});
+
+describe("sweepCompletedJobPii", () => {
+  test("nulls transient PII on done/failed jobs but leaves pending/retry untouched", async () => {
+    const done = await insertPendingJob({ status: "done", email: "a@example.com", sourceText: "geheim a" });
+    const failed = await insertPendingJob({ status: "failed", email: "b@example.com", sourceText: "geheim b" });
+    const pending = await insertPendingJob({ status: "pending", email: "c@example.com", sourceText: "geheim c" });
+    const retry = await insertPendingJob({ status: "retry", email: "d@example.com", sourceText: "geheim d" });
+
+    await sweepCompletedJobPii();
+
+    const get = async (id: string) => (await db.select().from(job).where(eq(job.id, id)))[0];
+
+    const doneRow = await get(done.id);
+    expect(doneRow.email).toBeNull();
+    expect(doneRow.sourceText).toBeNull();
+
+    const failedRow = await get(failed.id);
+    expect(failedRow.email).toBeNull();
+    expect(failedRow.sourceText).toBeNull();
+
+    // Noch laufende/retrybare Jobs brauchen den Quelltext — unangetastet.
+    const pendingRow = await get(pending.id);
+    expect(pendingRow.sourceText).toBe("geheim c");
+    const retryRow = await get(retry.id);
+    expect(retryRow.sourceText).toBe("geheim d");
   });
 });
