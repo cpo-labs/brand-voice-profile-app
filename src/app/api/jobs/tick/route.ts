@@ -1,15 +1,14 @@
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import { runOneJob, sweepCompletedJobPii } from "@/lib/job-runner";
 
-// Cron-Worker: verarbeitet pro Aufruf einen anstehenden Job durch die tiefe
-// Pipeline (~7 Min). maxDuration hoch (Fluid Compute). ACHTUNG: Plaene unterhalb
-// Enterprise deckeln still auf 300s und ignorieren hoehere Werte — laeuft die
-// Pipeline laenger, killt Vercel den Lauf mittendrin. Der Job bleibt dann
-// `processing`, wird nach dem Stale-Lock-Fenster automatisch requeued und neu
-// versucht (bis MAX_ATTEMPTS). Fuer harte 300s-Limits muss der Worker in
-// mehrere Ticks gesplittet werden.
+// Manueller/Poller-Fallback-Trigger. Die eigentliche Verarbeitung laeuft auf dem
+// Mac-Mini-Worker (scripts/worker.ts) gegen dieselbe Turso-DB — denn die tiefe
+// Pipeline (~7 Min) sprengt das Vercel-Funktions-Limit (Hobby: 300s, Pro: 800s).
+// Wird diese Route dennoch aufgerufen, verarbeitet sie einen Job, aber gedeckelt
+// auf 300s (Hobby-Max). Laenger laufende Jobs bleiben `processing` und werden
+// vom Worker nach dem Stale-Lock-Fenster requeued.
 export const dynamic = "force-dynamic";
-export const maxDuration = 800;
+export const maxDuration = 300;
 
 const CRON_SECRET = process.env.CRON_SECRET;
 const POLLER_SHARED_SECRET = process.env.POLLER_SHARED_SECRET;
