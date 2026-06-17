@@ -198,3 +198,94 @@ export async function condenseEssence(
 
   return { ...parsed, scales };
 }
+
+// ── Nachschaerf-Pass ─────────────────────────────────────────────────────────
+// Verifikations-Ebene "Nachschaerf": Das fertige Profil wird gegen eine STICHPROBE
+// echter Originaltexte gehalten und schonungslos kritisiert — liest sich das
+// wirklich wie diese Person? Was ist generisch/vage/unbelegt? Fehlen operative
+// Marker in den Drop-ins? Ergebnis ist eine VERBESSERTE Essenz (gleiche Struktur).
+const REFINE_SYSTEM = `Du bist ein schonungslos kritischer Voice-Editor. Du bekommst (1) ein bereits
+erstelltes Stimmprofil (Essenz), (2) die zugrundeliegenden Voice-Marker und (3) eine STICHPROBE
+echter Originaltexte der Person. Du verbesserst die Essenz und gibst sie ausschliesslich ueber das
+Tool \`emit_voice_essence\` zurueck — gleiche Struktur, aber praeziser und naeher an der Stichprobe.
+
+Pruefe gnadenlos gegen die Stichprobe:
+- Liest sich proofAfter WIRKLICH wie diese Person? Vergleiche Anrede, Opening, Satzrhythmus,
+  Interpunktion und Closing direkt mit der Stichprobe. Wenn nicht: schreibe proofAfter neu, naeher dran.
+- Sind die Drop-ins (ChatGPT/Claude/Gemini) operativ genug, dass ein fremdes LLM ohne den Korpus
+  in dieser Stimme schreibt? Nenne die konkretesten Marker explizit: Anrede-Regel nach Kontext,
+  Satzlaenge/Rhythmus, 3-5 woertliche Signatur-Wendungen, Interpunktion (v.a. was NIE vorkommt),
+  Opening/Closing-Muster, die wichtigsten Verbote.
+- identity, scales, usesPhrases, neverSays: streiche Vages und Unbelegtes, schaerfe mit dem, was die
+  Stichprobe und Marker hergeben. Niemals vage Adjektive ("professionell", "authentisch", "freundlich").
+- Aendere NICHTS frei Erfundenes hinein. Jede Aussage muss durch Marker oder Stichprobe gedeckt sein.
+- Du selbst benutzt keine KI-Floskeln und keine inflationaeren Gedankenstriche.
+
+Sprache: language "de" => deutsch mit echten Umlauten. language "en" => komplett englisch.`;
+
+const refineUserPrompt = (
+  current: VoiceEssence,
+  markers: VoiceMarkers,
+  sourceSample: string,
+  critiqueNotes?: string
+) =>
+  `${critiqueNotes ? `Ein Drop-in-Gegentest hat folgende Schwaechen gefunden — behebe sie gezielt:\n${critiqueNotes}\n\n` : ""}── Aktuelle Essenz (verbessern) ──
+${JSON.stringify(current, null, 1)}
+
+── Voice-Marker (Grundlage, nichts darueber hinaus erfinden) ──
+${JSON.stringify(markers, null, 1)}
+
+── Stichprobe echter Originaltexte (Massstab fuer "klingt wie die Person") ──
+${sourceSample}
+
+── Ende der Stichprobe ──
+
+Gib die VERBESSERTE Essenz ueber \`emit_voice_essence\` zurueck. Behalte die Struktur, mach sie
+praeziser und belegt naeher an der Stichprobe. Pflicht: 3-5 Skalen, usesPhrases woertlich,
+neverSays konkret, ueberzeugender Vorher/Nachher-Beweis, drei eigenstaendige operative Drop-ins.`;
+
+const MAX_SAMPLE_CHARS = 24_000;
+
+/**
+ * Nachschaerf-Pass: kritisiert die Essenz gegen eine Quell-Stichprobe und gibt
+ * eine verbesserte Essenz zurueck. `critiqueNotes` optional aus dem
+ * Drop-in-Gegentest, damit der Pass gezielt nachbessert.
+ */
+export async function refineEssence(
+  current: VoiceEssence,
+  markers: VoiceMarkers,
+  sourceSample: string,
+  signal: AbortSignal,
+  critiqueNotes?: string
+): Promise<VoiceEssence> {
+  const sample = sourceSample.slice(0, MAX_SAMPLE_CHARS);
+
+  const response = await getAnthropic().messages.create(
+    {
+      model: VOICE_MODEL,
+      max_tokens: MAX_OUTPUT_TOKENS,
+      system: [{ type: "text", text: REFINE_SYSTEM, cache_control: { type: "ephemeral" } }],
+      tools: [ESSENCE_TOOL],
+      tool_choice: { type: "tool", name: "emit_voice_essence" },
+      messages: [{ role: "user", content: refineUserPrompt(current, markers, sample, critiqueNotes) }],
+    },
+    { signal }
+  );
+
+  if (response.stop_reason === "max_tokens") {
+    throw new Error("Der Nachschaerf-Pass wurde zu lang und abgeschnitten. Bitte nochmal versuchen.");
+  }
+
+  const toolBlock = response.content.find((b) => b.type === "tool_use");
+  if (!toolBlock || toolBlock.type !== "tool_use") {
+    throw new Error("Keine auswertbare Antwort beim Nachschaerf-Pass. Bitte nochmal versuchen.");
+  }
+
+  const parsed = toolBlock.input as Partial<VoiceEssence>;
+  validateEssence(parsed);
+  const scales = parsed.scales.map((s) => ({
+    ...s,
+    value: Math.min(5, Math.max(1, Math.round(s.value))),
+  }));
+  return { ...parsed, scales };
+}

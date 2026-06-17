@@ -1,7 +1,14 @@
 import { buildVoiceMd } from "./voice-md";
-import { extractMarkers } from "./voice-markers";
-import { condenseEssence } from "./voice-essence";
-import type { SourceText, VoiceExtractionResult, VoiceMode, VoiceProfile } from "./voice-types";
+import { extractMarkers, consolidateMarkers, type MarkersResult } from "./voice-markers";
+import { condenseEssence, refineEssence } from "./voice-essence";
+import { checkQuoteFidelity, backTestDropIn } from "./voice-verify";
+import type {
+  SourceText,
+  VoiceExtractionResult,
+  VoiceMode,
+  VoiceProfile,
+  VoiceVerification,
+} from "./voice-types";
 
 // ── Orchestrator der zweistufigen Voice-Pipeline ────────────────────────────
 // Stufe 1 (voice-markers.ts): granulare Marker-Extraktion am Korpus.
@@ -53,12 +60,18 @@ export function detectModeHint(texts: SourceText[]): VoiceMode {
 }
 
 // ── Korpus-Budget (Stufe 1, Single-Pass) ────────────────────────────────────
-// Konservativ bei ~90k Zeichen (~22-25k Token Input) gehalten: das reicht fuer
-// ein repraesentatives Stimmprofil, haelt den Stufe-1-Call aber spuerbar
-// schneller und billiger als die fruehere 200k-Grenze (die regelmaessig in
-// Richtung Timeout lief). Groessere Uploads werden gesampelt statt abgelehnt:
-// pro Datei Kopf+Ende, damit Einstieg und Verlauf der Stimme erhalten bleiben.
-export const SAMPLE_CHAR_BUDGET = 90_000;
+// Obergrenze fuer den Text, der real an Stufe 1 geht. Sonnet 4.6 vertraegt den
+// Kontext muehelos; die echte Grenze ist Latenz (Selbst-Abbruch bei
+// STAGE1_TIMEOUT_MS) und Kosten, nicht das Kontextfenster. 180k Zeichen
+// (~45k Token) ist der bewusste Kompromiss: genug fuer ein dichtes,
+// repraesentatives Profil aus GROSSEN Uploads (lange Mail-Sammlungen,
+// Chat-Exporte) statt nur einer Handvoll Schnipsel — aber sicher unter dem
+// Stufe-1-Timeout. Direkter Vorgaenger war 90k; eine noch fruehere 200k-Grenze
+// lief gelegentlich in Richtung Timeout und wurde deshalb auf 90k reduziert.
+// 180k liegt bewusst dazwischen: deutlich mehr Signal als 90k, aber mit Abstand
+// zum Timeout. Noch groessere Uploads werden gesampelt statt abgelehnt: pro Datei
+// Kopf+Ende, damit Einstieg und Verlauf der Stimme erhalten bleiben.
+export const SAMPLE_CHAR_BUDGET = 180_000;
 const MIN_PER_FILE = 1_200;
 
 export function sampleForAnalysis(texts: SourceText[]): SourceText[] {
@@ -82,8 +95,14 @@ const MIN_TOTAL_CHARS = 500;
 // Zeit-Budgets: Vercel-Function laeuft mit maxDuration 300 (Fluid Compute).
 // Selbst-Abbruch deutlich davor, damit der Nutzer eine saubere Meldung
 // bekommt statt eines opaken Function-Timeouts.
-const STAGE1_TIMEOUT_MS = 110_000;
-const STAGE2_TIMEOUT_MS = 90_000;
+//
+// Gemessen an echtem, dichtem Material (50 Mails, voll gefuelltes Marker-Schema):
+// Stufe 1 ~127s, Stufe 2 ~66s. Die Stufe-1-Latenz wird von der ~8k-Token-Ausgabe
+// dominiert (das Schema mit min. 8 Zitaten, 6-12 Lexikon-Eintraegen etc.) und
+// haengt damit kaum am Input-Umfang. Die alten 110s schnitten genau diese gute
+// Analyse ab. Budgets: 180s + 100s = 280s, sicher unter maxDuration 300.
+const STAGE1_TIMEOUT_MS = 180_000;
+const STAGE2_TIMEOUT_MS = 100_000;
 
 async function withTimeout<T>(
   ms: number,
@@ -140,5 +159,147 @@ export async function extractVoice({ texts }: ExtractArgs): Promise<VoiceExtract
 
   const voiceMd = buildVoiceMd(profile);
 
+  return { ...profile, voiceMd };
+}
+
+// ── Tiefe, mehrfach verifizierte Pipeline (extractVoiceDeep) ─────────────────
+// Fuer den Hintergrund-Flow ohne 300s-Limit. Vier Verifikations-Ebenen:
+//   1. Konsens: N unabhaengige Marker-Laeufe (parallel) -> consolidateMarkers.
+//   2. Zitat-Treue: jedes Beleg-Zitat muss woertlich in den Quellen stehen.
+//   3. Nachschaerf: Essenz wird gegen eine Quell-Stichprobe nachgeschaerft.
+//   4. Drop-in-Gegentest: aus dem Drop-in erzeugter Test-Text wird gegen die
+//      Quelle bewertet; bei schwachem Score laeuft EIN korrigierender Pass.
+// Latenz ist hier zweitrangig (asynchron); jede LLM-Stufe hat dennoch einen
+// grosszuegigen Self-Abort, damit ein haengender Call nicht ewig blockiert.
+
+export interface ExtractDeepArgs {
+  texts: SourceText[];
+  /** Anzahl unabhaengiger Marker-Laeufe fuer den Konsens (Default 3, min 1). */
+  runs?: number;
+  /** Fortschritts-Callback fuer Logging/Job-Status. */
+  onProgress?: (stage: string) => void;
+}
+
+const DEEP_RUNS_DEFAULT = 3;
+const DEEP_STAGE_TIMEOUT_MS = 200_000;
+const MIN_QUOTES_AFTER_FIDELITY = 6;
+const BACKTEST_PASS_SCORE = 4;
+
+function buildSampleText(texts: SourceText[]): string {
+  return texts.map((t) => `── ${t.filename} ──\n${t.content}`).join("\n\n");
+}
+
+export async function extractVoiceDeep({
+  texts,
+  runs = DEEP_RUNS_DEFAULT,
+  onProgress,
+}: ExtractDeepArgs): Promise<VoiceExtractionResult> {
+  if (texts.length === 0) {
+    throw new Error("Keine Texte zum Analysieren uebergeben.");
+  }
+  const totalChars = texts.reduce((sum, t) => sum + t.content.length, 0);
+  if (totalChars < MIN_TOTAL_CHARS) {
+    throw new Error(
+      "Zu wenig Textmaterial. Gib uns mindestens einen ordentlichen Absatz (~500 Zeichen)."
+    );
+  }
+  const runCount = Math.max(1, Math.floor(runs));
+
+  const analysisTexts = sampleForAnalysis(texts);
+  const sampleText = buildSampleText(analysisTexts);
+  const modeHint = detectModeHint(analysisTexts);
+
+  // Ebene 1: Konsens aus mehreren unabhaengigen Laeufen (parallel).
+  // allSettled statt all: ein transienter Einzel-Fehler (Overload/Timeout in
+  // einem Lauf) darf den Konsens nicht killen, solange mindestens ein Lauf
+  // gelingt. Der Job-Runner kann zwar retryen, aber wir wollen nicht 2 gute
+  // Laeufe wegwerfen, weil der dritte zickt.
+  onProgress?.(`Konsens: ${runCount} parallele Marker-Laeufe`);
+  const settled = await Promise.allSettled(
+    Array.from({ length: runCount }, () =>
+      withTimeout(DEEP_STAGE_TIMEOUT_MS, (signal) => extractMarkers(analysisTexts, modeHint, signal))
+    )
+  );
+  const runResults = settled
+    .filter((r): r is PromiseFulfilledResult<MarkersResult> => r.status === "fulfilled")
+    .map((r) => r.value);
+  if (runResults.length === 0) {
+    throw new Error("Die Stil-Analyse ist in allen Laeufen fehlgeschlagen. Bitte nochmal versuchen.");
+  }
+  if (runResults.length < runCount) {
+    onProgress?.(`Konsens: nur ${runResults.length}/${runCount} Laeufe erfolgreich — fahre fort`);
+  }
+  const mode = runResults[0].mode;
+  onProgress?.("Konsens: konsolidieren");
+  const consensusMarkers = await withTimeout(DEEP_STAGE_TIMEOUT_MS, (signal) =>
+    consolidateMarkers(
+      runResults.map((r) => r.markers),
+      mode,
+      signal
+    )
+  );
+
+  // Ebene 2: Zitat-Treue (programmatisch). Faellt die Treue zu hart aus (zu
+  // wenige verifizierte Zitate), behalten wir die Original-Liste, damit das
+  // Profil nicht unter die Pflicht-Mindestmenge faellt — der Befund landet im
+  // Verifikations-Report.
+  const fidelity = checkQuoteFidelity(consensusMarkers.quotes, texts);
+  const quotes =
+    fidelity.kept.length >= MIN_QUOTES_AFTER_FIDELITY ? fidelity.kept : consensusMarkers.quotes;
+  const verifiedMarkers = { ...consensusMarkers, quotes };
+  onProgress?.(`Zitat-Treue: ${fidelity.kept.length}/${consensusMarkers.quotes.length} woertlich verifiziert`);
+
+  // Stufe 2: Verdichtung zur Essenz.
+  onProgress?.("Essenz verdichten");
+  const baseEssence = await withTimeout(DEEP_STAGE_TIMEOUT_MS, (signal) =>
+    condenseEssence(verifiedMarkers, mode, signal)
+  );
+
+  // Ebene 3: Nachschaerf gegen die Quell-Stichprobe.
+  onProgress?.("Nachschaerf-Pass");
+  let essence = await withTimeout(DEEP_STAGE_TIMEOUT_MS, (signal) =>
+    refineEssence(baseEssence, verifiedMarkers, sampleText, signal)
+  );
+
+  // Ebene 4: Drop-in-Gegentest; bei schwachem Score ein korrigierender Pass.
+  onProgress?.("Drop-in-Gegentest");
+  let backtest = await withTimeout(DEEP_STAGE_TIMEOUT_MS, (signal) =>
+    backTestDropIn(essence.dropInClaude, essence.proofPrompt, sampleText, signal)
+  );
+  if (!backtest.inconclusive && backtest.score < BACKTEST_PASS_SCORE) {
+    onProgress?.(`Gegentest schwach (${backtest.score}/5) -> korrigierender Nachschaerf-Pass`);
+    const notes = backtest.mismatches.join("; ");
+    essence = await withTimeout(DEEP_STAGE_TIMEOUT_MS, (signal) =>
+      refineEssence(essence, verifiedMarkers, sampleText, signal, notes)
+    );
+    backtest = await withTimeout(DEEP_STAGE_TIMEOUT_MS, (signal) =>
+      backTestDropIn(essence.dropInClaude, essence.proofPrompt, sampleText, signal)
+    );
+  }
+
+  const noteLines = [
+    ...backtest.matches.map((m) => `+ ${m}`),
+    ...backtest.mismatches.map((m) => `- ${m}`),
+  ];
+  const verification: VoiceVerification = {
+    consensusRuns: runResults.length,
+    quotesVerified: fidelity.kept.length,
+    quotesTotal: consensusMarkers.quotes.length,
+    refined: true,
+    backTestScore: backtest.score,
+    backTestNotes: noteLines.length > 0 ? noteLines.join("\n") : undefined,
+  };
+
+  const profile: VoiceProfile = {
+    ...essence,
+    mode,
+    registerNote: verifiedMarkers.registerNote,
+    quotes: verifiedMarkers.quotes,
+    markers: verifiedMarkers,
+    verification,
+  };
+
+  onProgress?.("VOICE.md bauen");
+  const voiceMd = buildVoiceMd(profile);
   return { ...profile, voiceMd };
 }

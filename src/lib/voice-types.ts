@@ -128,15 +128,39 @@ export interface VoiceEssence {
 export type VoiceMode = "destilliert" | "uebersetzt";
 
 /**
+ * Verifikations-Report der tiefen Pipeline (extractVoiceDeep). Macht fuer den
+ * Nutzer transparent, wie hart das Profil geprueft wurde: ueber wie viele
+ * unabhaengige Laeufe es konsolidiert ist, wie viele Beleg-Zitate woertlich in
+ * den Quellen gefunden wurden, ob ein Nachschaerf-Pass lief und wie nah ein aus
+ * dem Drop-in erzeugter Test-Text an den echten Quellen liegt (1..5).
+ */
+export interface VoiceVerification {
+  /** Anzahl unabhaengiger Marker-Laeufe, die in den Konsens eingingen. */
+  consensusRuns: number;
+  /** Wie viele Beleg-Zitate woertlich in den Quellen verifiziert wurden. */
+  quotesVerified: number;
+  /** Wie viele Beleg-Zitate insgesamt geprueft wurden. */
+  quotesTotal: number;
+  /** Ob ein quellengestuetzter Nachschaerf-Pass die Essenz verbessert hat. */
+  refined: boolean;
+  /** Drop-in-Gegentest: Aehnlichkeit eines erzeugten Test-Texts zur Quelle, 1..5. */
+  backTestScore: number;
+  /** Kurze Befunde des Gegentests (was passt, was abweicht). */
+  backTestNotes?: string;
+}
+
+/**
  * Vollstaendiges Stimmprofil = Essenz + Marker + Modus. registerNote und
  * quotes liegen (UI-kompatibel) zusaetzlich auf Top-Level. `markers` ist
  * optional, damit aeltere persistierte Profile (ohne Marker) weiter laden.
+ * `verification` liegt nur bei der tiefen Pipeline vor.
  */
 export interface VoiceProfile extends VoiceEssence {
   mode: VoiceMode;
   registerNote: string;
   quotes: VoiceQuote[];
   markers?: VoiceMarkers;
+  verification?: VoiceVerification;
 }
 
 export interface VoiceExtractionResult extends VoiceProfile {

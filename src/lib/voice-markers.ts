@@ -291,3 +291,77 @@ export async function extractMarkers(
   const { mode, ...markers } = parsed;
   return { markers: markers as VoiceMarkers, mode };
 }
+
+// ── Konsens: mehrere unabhaengige Marker-Laeufe zu einem belastbaren Satz ─────
+// Verifikations-Ebene "Konsens aus mehreren Laeufen": Wir extrahieren denselben
+// Korpus mehrfach unabhaengig und konsolidieren danach. Was ueber die Laeufe
+// hinweg stabil auftaucht, ist echt; Einzelfall-Rauschen faellt raus. Das Modell
+// sieht NUR die N Marker-Saetze (kein Korpus mehr), gibt aber ueber dasselbe
+// `emit_voice_markers`-Schema zurueck — gleiche Validierung, gleiche Form.
+const CONSOLIDATE_SYSTEM = `Du konsolidierst mehrere unabhaengige forensische Stil-Analysen
+DESSELBEN Korpus zu EINEM belastbaren Marker-Satz. Du gibst das Ergebnis ausschliesslich ueber das
+Tool \`emit_voice_markers\` zurueck.
+
+Vorgehen:
+- Behalte nur Marker, die ueber die Laeufe hinweg KONSISTENT auftauchen. Was nur in einem einzigen
+  Lauf steht und den anderen widerspricht, ist Rauschen — verwirf es.
+- Bei Beleg-Zitaten, Openings/Closings, Lexikon: bevorzuge die Eintraege, die mehrfach (woertlich
+  oder sinngleich) erscheinen. Uebernimm die Zitate WOERTLICH wie geliefert, formuliere sie nicht um.
+- Verschmilz Dubletten zu je einem praezisen Eintrag. Halte die geforderten Mindestmengen ein
+  (>= 8 Beleg-Zitate, 6-12 Lexikon, Interpunktion pro Zeichen, Do/Dont, Anti-Patterns).
+- Erfinde NICHTS dazu, was in keinem der Laeufe steht. Du bist Konsolidierer, nicht Autor.
+- Keine KI-Floskeln, keine inflationaeren Gedankenstriche, keine vagen Adjektive als Befund.
+
+Sprache: uebernimm die Sprache der Laeufe (de => echte Umlaute, en => englisch).`;
+
+const consolidateUserPrompt = (markerSets: VoiceMarkers[], mode: VoiceMode) =>
+  `Modus: "${mode}". Hier sind ${markerSets.length} unabhaengige Marker-Laeufe desselben Korpus als JSON.
+Konsolidiere sie ueber \`emit_voice_markers\` zu einem einzigen, belastbaren Marker-Satz: behalte das
+ueber die Laeufe Stabile, verwirf Einzelfall-Rauschen, verschmilz Dubletten.
+
+${markerSets
+    .map((m, i) => `─── Lauf ${i + 1} ─────────────────────\n${JSON.stringify(m, null, 1)}\n`)
+    .join("\n")}
+
+─── Ende der Laeufe ─────────────────────`;
+
+/**
+ * Konsolidiert mehrere unabhaengige Marker-Laeufe (>= 2) zu einem Konsens-Satz.
+ * Bei genau einem Lauf gibt der Aufrufer ihn direkt durch (kein Call noetig).
+ */
+export async function consolidateMarkers(
+  markerSets: VoiceMarkers[],
+  mode: VoiceMode,
+  signal: AbortSignal
+): Promise<VoiceMarkers> {
+  if (markerSets.length === 0) {
+    throw new Error("Keine Marker-Laeufe zum Konsolidieren uebergeben.");
+  }
+  if (markerSets.length === 1) return markerSets[0];
+
+  const response = await getAnthropic().messages.create(
+    {
+      model: VOICE_MODEL,
+      max_tokens: MAX_OUTPUT_TOKENS,
+      system: [{ type: "text", text: CONSOLIDATE_SYSTEM, cache_control: { type: "ephemeral" } }],
+      tools: [MARKERS_TOOL],
+      tool_choice: { type: "tool", name: "emit_voice_markers" },
+      messages: [{ role: "user", content: consolidateUserPrompt(markerSets, mode) }],
+    },
+    { signal }
+  );
+
+  if (response.stop_reason === "max_tokens") {
+    throw new Error("Die Konsolidierung wurde zu lang und abgeschnitten. Bitte nochmal versuchen.");
+  }
+
+  const toolBlock = response.content.find((b) => b.type === "tool_use");
+  if (!toolBlock || toolBlock.type !== "tool_use") {
+    throw new Error("Keine auswertbare Antwort bei der Konsolidierung. Bitte nochmal versuchen.");
+  }
+
+  const parsed = toolBlock.input as Partial<VoiceMarkers & { mode: VoiceMode }>;
+  validateMarkers(parsed);
+  const { mode: _ignored, ...markers } = parsed;
+  return markers as VoiceMarkers;
+}

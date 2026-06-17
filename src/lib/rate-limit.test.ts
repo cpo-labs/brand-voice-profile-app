@@ -24,9 +24,11 @@ describe("checkLimit", () => {
     expect(result.allowed).toBe(true);
   });
 
-  test("blocks second run for the same email (per-email limit 1)", async () => {
-    // Arrange
-    await recordRun({ email: "used@example.com" });
+  test("allows runs up to the per-email limit, blocks the one after", async () => {
+    // Arrange: das Limit exakt ausschoepfen
+    for (let i = 0; i < LIMITS.perEmail; i++) {
+      await recordRun({ email: "used@example.com" });
+    }
 
     // Act
     const result = await checkLimit("used@example.com");
@@ -36,9 +38,22 @@ describe("checkLimit", () => {
     expect(result.reason).toBe("per-email");
   });
 
+  test("still allows a run while under the per-email limit", async () => {
+    // Arrange: einen unter dem Limit (Limit ist > 1)
+    await recordRun({ email: "under@example.com" });
+
+    // Act
+    const result = await checkLimit("under@example.com");
+
+    // Assert: bei Limit 3 ist nach einem Run noch frei
+    expect(result.allowed).toBe(LIMITS.perEmail > 1);
+  });
+
   test("treats email case-insensitively for the limit", async () => {
-    // Arrange
-    await recordRun({ email: "Mixed@Example.com" });
+    // Arrange: Limit mit gemischter Schreibweise ausschoepfen
+    for (let i = 0; i < LIMITS.perEmail; i++) {
+      await recordRun({ email: "Mixed@Example.com" });
+    }
 
     // Act
     const result = await checkLimit("mixed@example.com");

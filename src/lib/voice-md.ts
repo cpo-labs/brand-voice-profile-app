@@ -107,6 +107,23 @@ ${m.claimStyle}
 `;
 }
 
+function verificationSection(p: VoiceProfile): string {
+  const v = p.verification;
+  if (!v) return "";
+  const lines = [
+    `- **Konsens:** aus ${v.consensusRuns} unabhaengigen Analyse-Laeufen konsolidiert`,
+    `- **Zitat-Treue:** ${v.quotesVerified}/${v.quotesTotal} Beleg-Zitate woertlich in den Quellen verifiziert`,
+    `- **Nachschaerf:** ${v.refined ? "Profil gegen eine Stichprobe der Originaltexte nachgeschaerft" : "kein Pass gelaufen"}`,
+    `- **Drop-in-Gegentest:** ${v.backTestScore}/5 — Aehnlichkeit eines aus dem Drop-in erzeugten Test-Texts zur echten Quelle`,
+  ];
+  const notes = v.backTestNotes ? `\n${v.backTestNotes}\n` : "";
+  return `## Verifikation
+
+${lines.join("\n")}
+${notes}
+`;
+}
+
 export function buildVoiceMd(p: VoiceProfile): string {
   const today = new Date().toISOString().slice(0, 10);
   return `# Stimmprofil
@@ -164,7 +181,7 @@ ${p.dropInClaude}
 
 ${p.dropInGemini}
 
-## Sicherheit & offene Punkte
+${verificationSection(p)}## Sicherheit & offene Punkte
 
 ${p.confidence}
 `;

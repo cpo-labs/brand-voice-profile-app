@@ -10,7 +10,7 @@ export interface LimitCheck {
   message?: string;
 }
 
-const PER_EMAIL = Number(process.env.PROFILE_LIMIT_PER_EMAIL ?? "1");
+const PER_EMAIL = Number(process.env.PROFILE_LIMIT_PER_EMAIL ?? "3");
 const GLOBAL_MONTHLY = Number(
   process.env.PROFILE_LIMIT_GLOBAL_MONTHLY ?? "100"
 );
